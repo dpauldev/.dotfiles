@@ -18,6 +18,25 @@ brew "speedtest-cli"
 brew "tree"
 brew "uv"
 
+# =====================================
+# Developer Productivity CLI
+# =====================================
+
+brew "fzf"
+brew "fd"
+brew "eza"
+brew "bat"
+brew "zoxide"
+
+brew "gh"
+brew "git-delta"
+brew "lazygit"
+
+brew "jq"
+brew "yq"
+brew "httpie"
+
+brew "starship"
 
 # =====================================
 # Development Tools
