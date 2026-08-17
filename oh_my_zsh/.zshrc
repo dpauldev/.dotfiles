@@ -61,16 +61,25 @@ ZSH_THEME="robbyrussell"
 # or set a custom format using the strftime function format specifications,
 # see 'man strftime' for details.
 # HIST_STAMPS="mm/dd/yyyy"
+HIST_STAMPS="yyyy-mm-dd"
 
 # Would you like to use another custom folder than $ZSH/custom?
 # ZSH_CUSTOM=/path/to/new-custom-folder
+ZSH_CUSTOM="$HOME/.dotfiles/oh_my_zsh/custom"
 
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(
+  git
+  alias-finder
+  aliases
+)
+
+# Alias finder: suggest existing aliases for commands I type
+zstyle ':omz:plugins:alias-finder' autoload yes
 
 source $ZSH/oh-my-zsh.sh
 
