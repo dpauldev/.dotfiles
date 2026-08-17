@@ -76,6 +76,8 @@ plugins=(
   git
   alias-finder
   aliases
+  zsh-autosuggestions
+  zsh-syntax-highlighting
 )
 
 # Alias finder: suggest existing aliases for commands I type
