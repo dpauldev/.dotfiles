@@ -4,14 +4,101 @@ Personal macOS development environment and configuration.
 
 ## Contents
 
-- **Oh My Zsh** — Zsh shell configuration and customizations
-- **Git** — Git configuration and preferences
-- **Shell** — Aliases and shell utilities
-- **macOS** — Development environment settings
-- **Scripts** — Setup and utility scripts
+- **Git**
+  - Global Git configuration
+  - GitHub identity settings
+
+- **Oh My Zsh**
+  - Shell configuration
+  - Custom aliases and functions
+
+- **Shell**
+  - Personal utilities and workflow improvements
+
+- **Scripts**
+  - Setup and automation scripts (planned)
+
+---
+
+## Repository Structure
+
+```text
+.dotfiles/
+│
+├── README.md
+├── .gitignore
+│
+├── git/
+│   └── .gitconfig
+│
+└── oh_my_zsh/
+    ├── .zshrc
+    └── custom/
+        ├── aliases.zsh
+        └── functions.zsh
+```
+
+---
+
+## Architecture
+
+This repository keeps configuration version-controlled while allowing tools to use their expected locations.
+
+### Git Configuration
+
+```text
+~/.gitconfig
+      |
+      | include
+      ↓
+~/.dotfiles/git/.gitconfig
+```
+
+### Zsh Configuration
+
+```text
+~/.zshrc
+      |
+      | symlink
+      ↓
+~/.dotfiles/oh_my_zsh/.zshrc
+      |
+      | ZSH_CUSTOM
+      ↓
+~/.dotfiles/oh_my_zsh/custom/
+      |
+      ├── aliases.zsh
+      └── functions.zsh
+```
+
+---
 
 ## Philosophy
 
-Keep my development environment version-controlled, reproducible, and portable.
+The goal is to keep my development environment:
 
-Configuration is organized by tool or purpose rather than stored directly in the repository root.
+- Version controlled
+- Reproducible
+- Portable
+- Organized by purpose
+
+Configuration is separated by responsibility rather than stored in a single large file.
+
+---
+
+## Future Improvements
+
+Planned additions:
+
+- Homebrew Brewfile
+- Bootstrap script for new machines
+- Developer tooling configuration
+- macOS preferences and automation scripts
+
+---
+
+## Credits
+
+Some shell utilities are adapted from open-source dotfiles projects.
+
+Credits are preserved inside individual configuration files where applicable.
