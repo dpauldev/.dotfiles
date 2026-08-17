@@ -2,61 +2,101 @@
 
 Personal macOS development environment and configuration.
 
+A reproducible workstation setup focused on developer productivity,
+automation, and terminal workflow optimization.
+
+---
+
 ## Contents
 
-- **Git**
-  - Global Git configuration
-  - GitHub identity settings
-
-- **Oh My Zsh**
-  - Shell configuration
-  - Custom aliases and functions
-
-- **Shell**
-  - Personal utilities and workflow improvements
-
-- **Scripts**
-  - Setup and automation scripts (planned)
+- Git configuration
+- Oh My Zsh configuration
+- Homebrew package management
+- Shell productivity tools
+- Bootstrap automation scripts
 
 ---
 
 ## Repository Structure
 
-```text
 .dotfiles/
-│
 ├── README.md
-├── .gitignore
+├── Brewfile
 │
 ├── git/
 │   └── .gitconfig
 │
-└── oh_my_zsh/
-    ├── .zshrc
-    └── custom/
-        ├── aliases.zsh
-        └── functions.zsh
-```
+├── oh_my_zsh/
+│   ├── .zshrc
+│   └── custom/
+│       ├── aliases.zsh
+│       ├── exports.zsh
+│       ├── functions.zsh
+│       └── plugins/
+│           ├── zsh-autosuggestions/
+│           └── zsh-syntax-highlighting/
+│
+└── scripts/
+    ├── bootstrap.sh
+    ├── install_homebrew.sh
+    ├── install_packages.sh
+    ├── install_ohmyzsh.sh
+    └── setup_symlinks.sh
+
+---
+
+## Bootstrap Setup
+
+For a new machine:
+
+git clone git@github.com:dpauldev/.dotfiles.git ~/.dotfiles
+
+cd ~/.dotfiles
+
+./scripts/bootstrap.sh
+
+Bootstrap performs:
+
+1. Install Homebrew
+2. Install packages from Brewfile
+3. Install Oh My Zsh
+4. Create configuration symlinks
+
+---
+
+## Developer CLI Tools
+
+| Tool | Purpose |
+|---|---|
+| eza | Modern replacement for ls |
+| bat | Better cat with syntax highlighting |
+| fd | Faster find replacement |
+| fzf | Fuzzy finder |
+| ripgrep | Fast text search |
+| zoxide | Smarter directory navigation |
+| lazygit | Terminal Git UI |
+| git-delta | Improved Git diff viewer |
+| gh | GitHub CLI |
+| jq | JSON processing |
+| yq | YAML processing |
+| httpie | Modern API client |
+| starship | Terminal prompt |
 
 ---
 
 ## Architecture
 
-This repository keeps configuration version-controlled while allowing tools to use their expected locations.
+Git configuration:
 
-### Git Configuration
-
-```text
 ~/.gitconfig
       |
       | include
       ↓
 ~/.dotfiles/git/.gitconfig
-```
 
-### Zsh Configuration
 
-```text
+Zsh configuration:
+
 ~/.zshrc
       |
       | symlink
@@ -66,10 +106,6 @@ This repository keeps configuration version-controlled while allowing tools to u
       | ZSH_CUSTOM
       ↓
 ~/.dotfiles/oh_my_zsh/custom/
-      |
-      ├── aliases.zsh
-      └── functions.zsh
-```
 
 ---
 
@@ -80,20 +116,20 @@ The goal is to keep my development environment:
 - Version controlled
 - Reproducible
 - Portable
-- Organized by purpose
+- Automated
+- Organized by responsibility
 
-Configuration is separated by responsibility rather than stored in a single large file.
+Configuration is separated by purpose instead of one large configuration file.
 
 ---
 
 ## Future Improvements
 
-Planned additions:
-
-- Homebrew Brewfile
-- Bootstrap script for new machines
-- Developer tooling configuration
-- macOS preferences and automation scripts
+- macOS preferences automation
+- Terminal multiplexer configuration
+- Editor configuration
+- AI engineering workstation setup
+- Container and cloud tooling
 
 ---
 
