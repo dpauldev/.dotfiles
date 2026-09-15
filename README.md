@@ -11,7 +11,7 @@ automation, and terminal workflow optimization.
 
 - Git configuration
 - Oh My Zsh configuration
-- Homebrew package management
+- Homebrew package management, split for multiple machines
 - Shell productivity tools
 - Self-documenting custom functions
 - Bootstrap automation scripts
@@ -25,6 +25,8 @@ automation, and terminal workflow optimization.
 ├── README.md
 ├── LICENSE
 ├── Brewfile
+├── Brewfile.dev
+├── Brewfile.spare
 │
 ├── git/
 │   └── .gitconfig
@@ -62,9 +64,23 @@ cd ~/.dotfiles
 Bootstrap performs:
 
 1. Install Homebrew
-2. Install packages from Brewfile
+2. Install packages — shared `Brewfile`, plus the role-specific `Brewfile.dev` or `Brewfile.spare`
 3. Install Oh My Zsh
 4. Create configuration symlinks
+
+---
+
+## Multi-Machine Package Management
+
+This repo supports more than one machine with different roles — a primary development workstation and a lightweight secondary machine — without maintaining a separate dotfiles repo for each.
+
+- `Brewfile` — packages shared by every machine.
+- `Brewfile.dev` — extra packages for the primary dev workstation only.
+- `Brewfile.spare` — extra packages for the lightweight secondary machine only.
+
+`scripts/install_packages.sh` always installs from the shared `Brewfile`, then detects which role-specific file to also install — by default via CPU architecture (`uname -m`), with an optional `~/.dotfiles-profile` file (kept outside the repo) as a manual override for cases where the chip alone isn't a reliable signal.
+
+Run `dotfiles-audit` to check for packages installed on the current machine but not yet tracked in either the shared or role-specific Brewfile — see `fndoc` for full usage.
 
 ---
 

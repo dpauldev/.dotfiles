@@ -1,10 +1,12 @@
-# Personal macOS workstation packages
+# Personal macOS workstation packages — shared across all machines
 #
 # This file documents intentionally installed
-# Homebrew formulae and casks.
+# Homebrew formulae and casks common to every machine.
 #
 # Dependencies are managed automatically by Homebrew
 # and are intentionally not listed.
+#
+# Machine-specific extras live in Brewfile.dev (primary) and Brewfile.spare (spare).
 
 # =====================================
 # Taps
@@ -17,13 +19,8 @@ tap "teamookla/speedtest"
 # =====================================
 
 brew "git"
-brew "htop"
-brew "jupyterlab"
-brew "ripgrep"
 brew "teamookla/speedtest/speedtest"
-brew "nghttp2"
 brew "tree"
-brew "uv"
 
 # =====================================
 # Developer Productivity CLI
@@ -34,15 +31,7 @@ brew "fd"
 brew "eza"
 brew "bat"
 brew "zoxide"
-
-brew "gh"
-brew "git-delta"
-brew "lazygit"
-
 brew "jq"
-brew "yq"
-brew "httpie"
-
 brew "starship"
 
 # =====================================
@@ -56,17 +45,9 @@ brew "translate-shell"
 # Development Tools
 # =====================================
 
-cask "visual-studio-code"
-cask "cursor"
-cask "codex"
+cask "iterm2"
 cask "claude"
 cask "claude-code"
-cask "iterm2"
-cask "postman"
-cask "postman-cli"
-cask "wireshark-app"
-cask "textmate"
-
 
 # =====================================
 # Productivity
@@ -79,18 +60,6 @@ cask "hiddenbar"
 cask "itsycal"
 cask "flux-app"
 
-
-# =====================================
-# Content Creation
-# =====================================
-
-cask "obs"
-cask "audacity"
-cask "iina"
-cask "imageoptim"
-cask "post-haste"
-
-
 # =====================================
 # Hardware Utilities
 # =====================================
@@ -98,13 +67,11 @@ cask "post-haste"
 cask "logi-options+"
 cask "aldente"
 
-
 # =====================================
 # Browsers
 # =====================================
 
 cask "brave-browser"
-
 
 # =====================================
 # Personal Applications
@@ -112,16 +79,12 @@ cask "brave-browser"
 
 cask "whatsapp"
 cask "tradingview"
-cask "anki"
-
 
 # =====================================
 # Fonts and Documents
 # =====================================
 
-cask "font-jetbrains-mono"
 cask "adobe-acrobat-reader"
-
 
 # =====================================
 # Security & Privacy

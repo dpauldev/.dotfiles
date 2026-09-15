@@ -43,7 +43,7 @@ fs() {
     if [[ -n "$@" ]]; then
         du -sh "$@"
     else
-        du -sh .
+        du -sh .[^.]* *
     fi
 }
 
@@ -56,7 +56,6 @@ gz() {
     local origsize=$(wc -c < "$1")
     local gzipsize=$(gzip -c "$1" | wc -c)
     local ratio=$(echo "$gzipsize * 100 / $origsize" | bc -l)
-
     printf "orig: %d bytes\n" "$origsize"
     printf "gzip: %d bytes (%2.2f%%)\n" "$gzipsize" "$ratio"
 }
@@ -147,7 +146,7 @@ fndoc() {
         awk '
             /^# @desc:/  { sub(/^# @desc:[ ]?/, ""); desc = $0 }
             /^# @usage:/ { sub(/^# @usage:[ ]?/, ""); usage = $0 }
-            /^[a-zA-Z_][a-zA-Z0-9_]*\(\) \{/ {
+            /^[a-zA-Z_][a-zA-Z0-9_-]*\(\) \{/ {
                 name = $0
                 sub(/\(\).*/, "", name)
                 printf "%s\t%s\t%s\n", name, usage, desc
@@ -155,4 +154,38 @@ fndoc() {
             }
         ' "$file"
     } | column -t -s $'\t'
+}
+
+# ---------------------------------------------------------------------------
+
+# @desc: Audits installed Homebrew packages against this machine's active Brewfiles (shared Brewfile plus the role-specific Brewfile.dev or Brewfile.spare), listing anything installed but not tracked in either
+# @usage: dotfiles-audit
+dotfiles-audit() {
+    local dotfiles="$HOME/.dotfiles"
+    local profile
+
+    if [[ -f "$HOME/.dotfiles-profile" ]]; then
+        profile=$(cat "$HOME/.dotfiles-profile" | tr -d '[:space:]')
+    else
+        case "$(uname -m)" in
+            arm64) profile="dev" ;;
+            *)     profile="spare" ;;
+        esac
+    fi
+
+    local profile_file="$dotfiles/Brewfile.$profile"
+    local files=("$dotfiles/Brewfile")
+    [[ -f "$profile_file" ]] && files+=("$profile_file")
+
+    # Every brew/cask name declared across the shared file + this machine's role file,
+    # normalized to the final path segment so tap-qualified names (e.g.
+    # teamookla/speedtest/speedtest) compare equal regardless of qualification
+    local declared
+    declared=$(grep -hE '^(brew|cask) ' "${files[@]}" | sed -E 's/^(brew|cask) "([^"]+)".*/\2/' | sed -E 's#.*/##' | sort -u)
+
+    echo "Installed but not tracked in Brewfile or Brewfile.$profile:"
+    echo "--- Formulae (explicitly installed only, not auto-pulled dependencies) ---"
+    comm -23 <(brew leaves | sed -E 's#.*/##' | sort) <(echo "$declared")
+    echo "--- Casks ---"
+    comm -23 <(brew list --cask | sed -E 's#.*/##' | sort) <(echo "$declared")
 }

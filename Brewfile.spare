@@ -1,0 +1,10 @@
+# Spare Mac extras — currently just the browser choice that differs
+# from the primary machine.
+#
+# Loaded in addition to the shared Brewfile — see install_packages.sh.
+
+# =====================================
+# Browsers
+# =====================================
+
+cask "google-chrome"

@@ -1,0 +1,58 @@
+# Primary workstation extras — heavier dev/content-creation tools
+# not needed on the lightweight spare machine.
+#
+# Loaded in addition to the shared Brewfile — see install_packages.sh.
+
+# =====================================
+# Command Line Tools
+# =====================================
+
+brew "htop"
+brew "jupyterlab"
+brew "ripgrep"
+brew "nghttp2"
+brew "uv"
+
+# =====================================
+# Developer Productivity CLI
+# =====================================
+
+brew "gh"
+brew "git-delta"
+brew "lazygit"
+brew "yq"
+brew "httpie"
+
+# =====================================
+# Development Tools
+# =====================================
+
+cask "visual-studio-code"
+cask "cursor"
+cask "codex"
+cask "postman"
+cask "postman-cli"
+cask "wireshark-app"
+cask "textmate"
+
+# =====================================
+# Content Creation
+# =====================================
+
+cask "obs"
+cask "audacity"
+cask "iina"
+cask "imageoptim"
+cask "post-haste"
+
+# =====================================
+# Fonts and Documents
+# =====================================
+
+cask "font-jetbrains-mono"
+
+# =====================================
+# Personal Applications
+# =====================================
+
+cask "anki"
