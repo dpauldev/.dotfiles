@@ -13,14 +13,17 @@ automation, and terminal workflow optimization.
 - Oh My Zsh configuration
 - Homebrew package management
 - Shell productivity tools
+- Self-documenting custom functions
 - Bootstrap automation scripts
 
 ---
 
 ## Repository Structure
 
+```
 .dotfiles/
 ├── README.md
+├── LICENSE
 ├── Brewfile
 │
 ├── git/
@@ -42,6 +45,7 @@ automation, and terminal workflow optimization.
     ├── install_packages.sh
     ├── install_ohmyzsh.sh
     └── setup_symlinks.sh
+```
 
 ---
 
@@ -49,11 +53,11 @@ automation, and terminal workflow optimization.
 
 For a new machine:
 
+```bash
 git clone git@github.com:dpauldev/.dotfiles.git ~/.dotfiles
-
 cd ~/.dotfiles
-
 ./scripts/bootstrap.sh
+```
 
 Bootstrap performs:
 
@@ -81,6 +85,22 @@ Bootstrap performs:
 | yq | YAML processing |
 | httpie | Modern API client |
 | starship | Terminal prompt |
+| languagetool | Local grammar/style checking server (used by `lt`) |
+| translate-shell | Command-line translation (used by `td`/`te`) |
+| speedtest | Official Ookla internet speed test |
+
+---
+
+## Custom Functions
+
+Custom shell functions live in `oh_my_zsh/custom/functions.zsh`, each documented with a small set of tags in the comment block directly above it:
+
+- `@desc` — what the function does
+- `@usage` — how to call it, including any arguments
+- `@requires` — an external dependency needed for it to work, if any
+- `@credit` — the external source it was adapted from, when applicable (see Credits below)
+
+Run `fndoc` to list every custom function along with its usage and description, generated live from these tags — so this README never goes stale when a function is added.
 
 ---
 
@@ -88,15 +108,17 @@ Bootstrap performs:
 
 Git configuration:
 
+```
 ~/.gitconfig
       |
       | include
       ↓
 ~/.dotfiles/git/.gitconfig
-
+```
 
 Zsh configuration:
 
+```
 ~/.zshrc
       |
       | symlink
@@ -106,6 +128,7 @@ Zsh configuration:
       | ZSH_CUSTOM
       ↓
 ~/.dotfiles/oh_my_zsh/custom/
+```
 
 ---
 
@@ -135,6 +158,16 @@ Configuration is separated by purpose instead of one large configuration file.
 
 ## Credits
 
-Some shell utilities are adapted from open-source dotfiles projects.
+Some shell utilities are adapted from open-source dotfiles projects. Each adapted function carries an `@credit` tag in `functions.zsh` pointing to its source.
 
-Credits are preserved inside individual configuration files where applicable.
+---
+
+## AI Assistance
+
+Some functions and scripts in this repository were developed with AI assistance. Functions without an `@credit` tag in `functions.zsh` fall into this category.
+
+---
+
+## License
+
+MIT — see [LICENSE](./LICENSE).
