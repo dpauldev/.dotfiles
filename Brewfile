@@ -7,6 +7,12 @@
 # and are intentionally not listed.
 
 # =====================================
+# Taps
+# =====================================
+
+tap "teamookla/speedtest"
+
+# =====================================
 # Command Line Tools
 # =====================================
 
@@ -14,7 +20,8 @@ brew "git"
 brew "htop"
 brew "jupyterlab"
 brew "ripgrep"
-brew "speedtest-cli"
+brew "teamookla/speedtest/speedtest"
+brew "nghttp2"
 brew "tree"
 brew "uv"
 
@@ -39,6 +46,13 @@ brew "httpie"
 brew "starship"
 
 # =====================================
+# Language Tools
+# =====================================
+
+brew "languagetool"
+brew "translate-shell"
+
+# =====================================
 # Development Tools
 # =====================================
 
@@ -46,10 +60,12 @@ cask "visual-studio-code"
 cask "cursor"
 cask "codex"
 cask "claude"
+cask "claude-code"
 cask "iterm2"
 cask "postman"
 cask "postman-cli"
 cask "wireshark-app"
+cask "textmate"
 
 
 # =====================================
@@ -61,7 +77,7 @@ cask "raycast"
 cask "stats"
 cask "hiddenbar"
 cask "itsycal"
-cask "mark-text"
+cask "flux-app"
 
 
 # =====================================
@@ -80,6 +96,7 @@ cask "post-haste"
 # =====================================
 
 cask "logi-options+"
+cask "aldente"
 
 
 # =====================================
@@ -104,3 +121,10 @@ cask "anki"
 
 cask "font-jetbrains-mono"
 cask "adobe-acrobat-reader"
+
+
+# =====================================
+# Security & Privacy
+# =====================================
+
+cask "lulu"
