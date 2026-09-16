@@ -20,9 +20,11 @@ if [ ! -f "$SOURCE" ]; then
     exit 1
 fi
 
-# If .zshrc is already a symlink, verify it points to our dotfiles version
+# If .zshrc is already a symlink, verify it points to the correct dotfiles version.
+# -L tests specifically for "is this a symlink" — even a broken one whose target no longer exists. Checking -L before -e (below) matters: a dangling symlink would otherwise slip past this check and be treated like a normal file in the branch below.
 if [ -L "$TARGET" ]; then
 
+    # readlink prints the path a symlink actually points to
     CURRENT=$(readlink "$TARGET")
 
     if [ "$CURRENT" = "$SOURCE" ]; then
@@ -34,7 +36,8 @@ if [ -L "$TARGET" ]; then
     fi
 
 
-# If a normal .zshrc exists, preserve it before creating the symlink
+# If a normal .zshrc exists, preserve it before creating the symlink.
+# -e matches anything already at this path — reached only once TARGET is confirmed not to be a symlink already, per the -L check above
 elif [ -e "$TARGET" ]; then
 
     BACKUP="$TARGET.backup-$(date +%Y-%m-%d-%H%M%S)"
@@ -60,4 +63,3 @@ else
     echo ".zshrc linked ✓"
 
 fi
-

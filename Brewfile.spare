@@ -7,4 +7,4 @@
 # Browsers
 # =====================================
 
-cask "google-chrome"
+cask "firefox"

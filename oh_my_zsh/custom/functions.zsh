@@ -177,9 +177,7 @@ dotfiles-audit() {
     local files=("$dotfiles/Brewfile")
     [[ -f "$profile_file" ]] && files+=("$profile_file")
 
-    # Every brew/cask name declared across the shared file + this machine's role file,
-    # normalized to the final path segment so tap-qualified names (e.g.
-    # teamookla/speedtest/speedtest) compare equal regardless of qualification
+    # Every brew/cask name declared across the shared file + this machine's role file, normalized to the final path segment so tap-qualified names (e.g. teamookla/speedtest/speedtest) compare equal regardless of qualification
     local declared
     declared=$(grep -hE '^(brew|cask) ' "${files[@]}" | sed -E 's/^(brew|cask) "([^"]+)".*/\2/' | sed -E 's#.*/##' | sort -u)
 

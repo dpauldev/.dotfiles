@@ -19,11 +19,11 @@ else
     #   Do not change the user's default shell.
     #
     # KEEP_ZSHRC=yes
-    #   Preserve existing ~/.zshrc because dotfiles manages it.    
-
+    #   Preserve existing ~/.zshrc because dotfiles manages it.
+    #
+    # Writing VAR=value directly before the command (joined to it via the trailing \) scopes these three variables to just this one command — they're gone again as soon as it finishes, unlike "export VAR=value" on its own line, which would leave them set in the shell afterward
     RUNZSH=no CHSH=no KEEP_ZSHRC=yes \
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
     echo "Oh My Zsh installation complete ✓"
 fi
-
