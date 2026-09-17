@@ -45,8 +45,6 @@ brew "translate-shell"
 # Development Tools
 # =====================================
 
-cask "iterm2"
-cask "claude"
 cask "claude-code"
 
 # =====================================

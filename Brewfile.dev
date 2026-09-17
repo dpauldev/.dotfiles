@@ -27,6 +27,8 @@ brew "httpie"
 # Development Tools
 # =====================================
 
+cask "iterm2"
+cask "claude"
 cask "visual-studio-code"
 cask "cursor"
 cask "codex"
