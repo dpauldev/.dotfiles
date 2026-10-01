@@ -1,5 +1,13 @@
 # Navigation
 alias dotfiles="cd ~/.dotfiles"
+alias aitools="cd ~/.aitools-config"
+
+# .aitools-config scripts — aiinit copies a reusable template (CLAUDE.md,
+# AGENTS.md, a skill, a hook, an agent) into whatever project you're
+# currently in; ailink re-applies the symlinks/copies into ~/.claude,
+# Copilot, and Cline after editing anything under aitools-config/shared/
+alias aiinit="~/.aitools-config/scripts/init_project.sh"
+alias ailink="~/.aitools-config/scripts/setup_symlinks.sh"
 
 # Corrects the common typo of forgetting the space after cd — "cd.." on its own would otherwise be an unrecognized command, not the same as "cd .."
 alias cd..="cd .."
