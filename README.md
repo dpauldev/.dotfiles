@@ -66,7 +66,8 @@ Bootstrap performs:
 1. Install Homebrew
 2. Install packages — shared `Brewfile`, plus the role-specific `Brewfile.dev` or `Brewfile.spare`
 3. Install Oh My Zsh
-4. Create configuration symlinks
+4. Initialize git submodules (the zsh plugins in `oh_my_zsh/custom/plugins/`)
+5. Create configuration symlinks
 
 ---
 

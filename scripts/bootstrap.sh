@@ -23,7 +23,11 @@ echo "Step 3: Installing Oh My Zsh"
 "$DOTFILES/scripts/install_ohmyzsh.sh"
 
 echo ""
-echo "Step 4: Setting up symlinks"
+echo "Step 4: Initializing git submodules"
+git -C "$DOTFILES" submodule update --init --recursive
+
+echo ""
+echo "Step 5: Setting up symlinks"
 "$DOTFILES/scripts/setup_symlinks.sh"
 
 echo ""
