@@ -104,28 +104,62 @@ lt() {
 
 # ---------------------------------------------------------------------------
 
-# @desc: Quick German-to-English translation via translate-shell
-# @usage: td <german text>
+# @desc: Quick German-to-English translation via translate-shell. Defaults to
+#   trans's native/full output (translation, pronunciation, definitions,
+#   examples) since a bare translation alone is thin when learning a
+#   language; pass -b for just the bare translation, or -d for a
+#   dictionary-style breakdown of a single word
+# @usage: td [-b|-d] <german text>
 # @requires: translate-shell (brew install translate-shell)
 td() {
+    local flag=""
+    case "$1" in
+        -b|-d)
+            flag="$1"
+            shift
+            ;;
+    esac
+
     if [[ -z "$*" ]]; then
-        echo "Usage: td <German text to translate>"
+        echo "Usage: td [-b|-d] <German text to translate>"
         return 1
     fi
-    trans -b de:en "$*"
+
+    if [[ -n "$flag" ]]; then
+        trans "$flag" de:en "$*"
+    else
+        trans de:en "$*"
+    fi
 }
 
 # ---------------------------------------------------------------------------
 
-# @desc: Quick English-to-German translation via translate-shell
-# @usage: te <english text>
+# @desc: Quick English-to-German translation via translate-shell. Defaults to
+#   trans's native/full output (translation, pronunciation, definitions,
+#   examples) since a bare translation alone is thin when learning a
+#   language; pass -b for just the bare translation, or -d for a
+#   dictionary-style breakdown of a single word
+# @usage: te [-b|-d] <english text>
 # @requires: translate-shell (brew install translate-shell)
 te() {
+    local flag=""
+    case "$1" in
+        -b|-d)
+            flag="$1"
+            shift
+            ;;
+    esac
+
     if [[ -z "$*" ]]; then
-        echo "Usage: te <English text to translate>"
+        echo "Usage: te [-b|-d] <English text to translate>"
         return 1
     fi
-    trans -b en:de "$*"
+
+    if [[ -n "$flag" ]]; then
+        trans "$flag" en:de "$*"
+    else
+        trans en:de "$*"
+    fi
 }
 
 # ---------------------------------------------------------------------------
