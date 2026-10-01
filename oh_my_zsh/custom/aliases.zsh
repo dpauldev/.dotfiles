@@ -1,6 +1,7 @@
 # Navigation
 alias dotfiles="cd ~/.dotfiles"
 alias aitools="cd ~/.aitools-config"
+alias home="cd ~"
 
 # .aitools-config scripts — aiinit copies a reusable template (CLAUDE.md,
 # AGENTS.md, a skill, a hook, an agent) into whatever project you're
