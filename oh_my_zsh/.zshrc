@@ -1,4 +1,3 @@
-# If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
 # Path to your Oh My Zsh installation.
@@ -82,6 +81,13 @@ plugins=(
   aliases
   zsh-autosuggestions
   zsh-syntax-highlighting
+  brew
+  uv
+  uv-env
+  zoxide
+  fzf
+  vscode
+  gh
 )
 
 # Alias finder: suggest existing aliases for commands I type
