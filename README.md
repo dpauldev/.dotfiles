@@ -127,9 +127,11 @@ Aliases come from two places: the Oh My Zsh plugins enabled in `~/.zshrc` (defin
 - `aliasdoc <group>` — show one group; any other word is searched for (names and expansions, with the match highlighted)
 - `aliasdoc -s <word>` — force a search, even when the word is also a group name
 - `aliasdoc -a` — everything, through a pager
+- `aliasdoc -t [N] [-d DAYS]` — the most-used aliases, from shell history, with a trend (last `DAYS` days vs the `DAYS` before, default 30) and a count of aliases never used
+- `aliasdoc -m [N] [-d DAYS]` — "missed shortcuts": full commands typed repeatedly although an alias exists (`git status` → `gst`), most frequent first
 - `aliasdoc -h` — full help with examples
 
-Like `fndoc`, it reads live state, so it never needs updating when aliases change (run `reload` to pick up edits).
+Like `fndoc`, it reads live state, so it never needs updating when aliases change (run `reload` to pick up edits). The `-t` and `-m` reports read the shell history file (`$HISTFILE`, read-only), so they only cover as many commands as `SAVEHIST` keeps.
 
 ---
 

@@ -224,8 +224,8 @@ dotfiles-audit() {
 
 # ---------------------------------------------------------------------------
 
-# @desc: Lists every alias currently loaded in this shell, grouped by where it was defined (each enabled Oh My Zsh plugin, OMZ core lib, or your own aliases.zsh); no args shows groups with counts
-# @usage: aliasdoc [group | keyword | -s <keyword> | -a | -h]
+# @desc: Lists every alias currently loaded in this shell, grouped by where it was defined (each enabled Oh My Zsh plugin, OMZ core lib, or the custom aliases.zsh); no args shows groups with counts. -t ranks your most-used aliases from shell history with a trend, -m lists full commands you typed although an alias exists
+# @usage: aliasdoc [group | keyword | -s <keyword> | -a | -t [N] [-d DAYS] | -m [N] [-d DAYS] | -h]
 aliasdoc() {
     case "$1" in
         -h|--help)
@@ -233,13 +233,19 @@ aliasdoc() {
 aliasdoc - browse every alias loaded in this shell, grouped by where it was defined
 (each enabled Oh My Zsh plugin, omz-core, or your own custom/aliases.zsh)
 
-Usage: aliasdoc [group | keyword | -s <keyword> | -a | -h]
+Usage: aliasdoc [group | keyword | -s <keyword> | -a | -t [N] [-d DAYS] | -m [N] [-d DAYS] | -h]
 
   (no args)      list the groups with how many aliases each has
   <group>        show the aliases of one group
   <keyword>      if it is not a group name, search alias names and expansions
   -s <keyword>   force a search, even if the word is also a group name
   -a, --all      list every alias, grouped, through a pager (q to quit)
+  -t [N]         top N most-used aliases (default 15) from the shell history,
+                 with a trend and how many aliases are never used
+  -m [N]         top N "missed shortcuts" (default 15): full commands typed
+                 although an alias exists, e.g. "git status" -> gst
+  -d DAYS        with -t: trend window, last DAYS vs the DAYS before (default 30)
+                 with -m: only look at the last DAYS days (default: all history)
   -h, --help     show this help
 
 Examples:
@@ -248,10 +254,16 @@ Examples:
   aliasdoc checkout      every alias whose name or command contains "checkout"
   aliasdoc -s git        search for the word "git" across all groups,
                          instead of showing the git group
+  aliasdoc -t            the 15 most-used aliases
+  aliasdoc -t 5 -d 7     top 5, trend over the last 7 days
+  aliasdoc -m -d 14      aliases worth learning, from the last two weeks
 
 Notes:
   - An exact group name always wins over a search; use -s to override.
   - Matches are highlighted; colors are off when output is piped.
+  - -t and -m read $HISTFILE, so they only see what it keeps (SAVEHIST lines);
+    only the first word of a command is counted (a leading sudo is
+    ignored), so "a && b" counts "a".
   - After editing aliases or plugins, run 'reload' to refresh the list.
 EOF
             return 0
@@ -287,9 +299,10 @@ EOF
     done | sort -t$'\t' -k1,1 -k2,2)
 
     # Colors only when writing to a terminal, so piping the output stays clean. The check runs here, before any pipe is set up.
-    local c_head="" c_name="" c_hit="" c_off=""
+    local c_head="" c_name="" c_hit="" c_off="" c_dim="" c_up="" c_down="" c_bar=""
     if [[ -t 1 ]]; then
         c_head=$'\e[1;38;5;160m'; c_name=$'\e[1;32m'; c_hit=$'\e[1;4;38;5;33m'; c_off=$'\e[0m'
+        c_dim=$'\e[2m'; c_up=$'\e[32m'; c_down=$'\e[31m'; c_bar=$'\e[38;5;33m'
     fi
 
     # Renders rows as: heading per group, then indented "name  = expansion". Pads names itself (column -t would count the invisible color codes as width and misalign). Optional vars: only = show one group, kw = case-insensitive match on name/expansion, highlighted.
@@ -316,6 +329,103 @@ EOF
         }'
     local -a awkvars=(-F'\t' -v h="$c_head" -v c="$c_name" -v t="$c_hit" -v o="$c_off")
 
+    # Usage statistics from the shell history. Reads two inputs: the alias rows, then the history file (extended format ": <epoch>:0;<command>"; continuation lines are skipped). mode=t counts how often each alias is typed (first word, optional sudo) with a trend of the last <days> days against the <days> before; mode=m finds full commands that match an alias expansion (longest expansion wins) although the alias was not used.
+    local stats='
+        function padr(s, w,   r, j) { r = s; for (j = length(s); j < w; j++) r = r " "; return r }
+        function padl(s, w,   r, j) { r = s; for (j = length(s); j < w; j++) r = " " r; return r }
+        function when(t,   dd) { dd = int((now - t) / 86400); return (dd == 0) ? "today" : dd "d ago" }
+        FNR == NR {
+            isal[$2] = 1; ex[$2] = $3; total++
+            if (mode == "m" && index($3, " ") > 0 && length($2) < length($3)) {
+                names[$3] = ($3 in names) ? names[$3] ", " $2 : $2
+                if (!($3 in seen)) { seen[$3] = 1; split($3, fwp, " "); cand[fwp[1]] = cand[fwp[1]] "\n" $3 }
+            }
+            next
+        }
+        {
+            raw++
+            if ($0 !~ /^: [0-9]+:[0-9]+;/) next
+            match($0, /^: [0-9]+/); ts = substr($0, 3, RLENGTH - 2) + 0
+            cmd = substr($0, index($0, ";") + 1)
+            sub(/^[ \t]+/, "", cmd); sub(/[ \t]+$/, "", cmd)
+            if (cmd == "") next
+            lines++; if (min == 0 || ts < min) min = ts
+            age = now - ts
+            cc = cmd; sub(/^sudo[ \t]+/, "", cc)
+            split(cc, wd, /[ \t]+/); w = wd[1]
+            if (mode == "m") {
+                if (days > 0 && age > days * 86400) next
+                if (!(w in cand)) next
+                if (!(cc in memo)) {
+                    nc = split(cand[w], cl, "\n"); best = ""
+                    for (k = 2; k <= nc; k++) { e = cl[k]; if (length(e) > length(best) && (cc == e || index(cc, e " ") == 1)) best = e }
+                    memo[cc] = best
+                }
+                best = memo[cc]
+                if (best != "") { miss[best]++; if (ts > lastm[best]) lastm[best] = ts }
+                next
+            }
+            if (w in isal) {
+                cnt[w]++; if (ts > last[w]) last[w] = ts
+                if (age <= days * 86400) rec[w]++
+                else if (age <= 2 * days * 86400) prev[w]++
+            }
+        }
+        END {
+            if (lines == 0) {
+                print (raw > 0) ? "No timestamped history found: -t and -m need EXTENDED_HISTORY (lines like \": 1700000000:0;cmd\")." : "No history found."
+                exit
+            }
+            span = int((now - min) / 86400)
+            if (mode == "m") {
+                win = (days > 0) ? "last " days " days" : "all history, " span " days"
+                cw = 5; mw = 13
+                while (shown < n) {
+                    best = ""; bc = 0
+                    for (e in miss) if (!(e in done) && (miss[e] > bc || (miss[e] == bc && best != "" && e < best))) { best = e; bc = miss[e] }
+                    if (best == "") break
+                    done[best] = 1; order[++shown] = best
+                    if (length(best) > mw) mw = length(best)
+                    if (length(bc) > cw) cw = length(bc)
+                }
+                if (shown == 0) { print "No missed shortcuts found (" win ")."; exit }
+                printf "%sFull commands typed although an alias exists%s (top %d, %s)\n", h, o, shown, win
+                print dm "  " padl("COUNT", cw + 2) "  " padr("LAST TYPED", 10) "  " padr("TYPED IN FULL", mw) "      ALIAS" o
+                for (i = 1; i <= shown; i++) {
+                    e = order[i]
+                    print "  " padl(miss[e] " x", cw + 2) "  " dm padr(when(lastm[e]), 10) o "  " padr(e, mw) "  ->  " c names[e] o
+                }
+                exit
+            }
+            for (a in cnt) used++
+            if (!used) { print "No alias usage found in history."; exit }
+            nw = 5; cw = 5; tw = 5
+            full = (span >= 2 * days); part = (span > days); pd = full ? days : span - days
+            while (shown < n) {
+                best = ""; bc = 0
+                for (a in cnt) if (!(a in done) && (cnt[a] > bc || (cnt[a] == bc && best != "" && a < best))) { best = a; bc = cnt[a] }
+                if (best == "") break
+                done[best] = 1; order[++shown] = best
+                trs[best] = part ? (rec[best] + 0) "/" (prev[best] + 0) : (rec[best] + 0) "/-"
+                if (length(best) > nw) nw = length(best)
+                if (length(bc) > cw) cw = length(bc)
+                if (length(trs[best]) + 2 > tw) tw = length(trs[best]) + 2
+            }
+            maxc = cnt[order[1]]
+            printf "%sTop %d most-used aliases%s\n", h, shown, o
+            printf "%shistory: %d commands over %d days; trend = last %d days / previous %d days%s%s\n", dm, lines, span, days, days, (full ? "" : (part ? " (previous window only partly covered: arrows compare per-day rates)" : " (history is no longer than one window, so no trend yet)")), o
+            print dm "  " padr("ALIAS", nw) "  " padr("USAGE", 16) " " padl("COUNT", cw) "  " padr("TREND", tw) "  " padr("LAST USED", 9) "  COMMAND" o
+            for (i = 1; i <= shown; i++) {
+                a = order[i]
+                bl = int(cnt[a] * 16 / maxc + 0.5); if (bl < 1) bl = 1
+                bar = ""; for (j = 0; j < bl; j++) bar = bar "▆"
+                r = rec[a] + 0; p = prev[a] + 0
+                if (!part) ar = dm "-"; else if (r * pd > p * days) ar = up "▲"; else if (r * pd < p * days) ar = dn "▼"; else ar = dm "="
+                print "  " c padr(a, nw) o "  " bar_c bar o padr("", 16 - bl) " " padl(cnt[a], cw) "  " ar o " " padr(trs[a], tw - 2) "  " dm padr(when(last[a]), 9) o "  " dm ex[a] o
+            }
+            printf "\n%d of %d aliases never used in this history.\n", total - used, total
+        }'
+
     case "$1" in
         "")
             echo "Alias groups (run 'aliasdoc <group>' to see one, 'aliasdoc -s <word>' to search):"
@@ -326,6 +436,37 @@ EOF
         -a|--all)
             # less needs -R to pass the colors through instead of showing raw codes
             print -r -- "$rows" | awk "${awkvars[@]}" "$render" | LESS="${LESS:--R}" ${PAGER:-less}
+            ;;
+        -t|--top|-m|--missed)
+            local mode=t n=15 days=""
+            [[ "$1" == -m || "$1" == --missed ]] && mode=m
+            shift
+            while (( $# )); do
+                case "$1" in
+                    -d)
+                        if [[ "$2" != <-> || "$2" -lt 1 ]]; then
+                            echo "aliasdoc: -d needs a number of days, e.g. -d 7"
+                            return 1
+                        fi
+                        days=$2; shift 2
+                        ;;
+                    <1->) n=$1; shift ;;
+                    *)
+                        echo "aliasdoc: unexpected argument '$1' (see 'aliasdoc -h')"
+                        return 1
+                        ;;
+                esac
+            done
+            # Trend window defaults to 30 days; missed shortcuts default to the whole history
+            [[ -z "$days" ]] && { [[ $mode == t ]] && days=30 || days=0 }
+            if [[ ! -r "$HISTFILE" ]]; then
+                echo "aliasdoc: history file not found ($HISTFILE)"
+                return 1
+            fi
+            # LC_ALL=C: zsh stores some non-ASCII bytes in history in a form macOS awk rejects as invalid UTF-8
+            LC_ALL=C awk "${awkvars[@]}" -v mode="$mode" -v n="$n" -v days="$days" -v now="$(date +%s)" \
+                -v dm="$c_dim" -v up="$c_up" -v dn="$c_down" -v bar_c="$c_bar" \
+                "$stats" <(print -r -- "$rows") "$HISTFILE"
             ;;
         -s|--search)
             if [[ -z "$2" ]]; then
