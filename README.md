@@ -145,7 +145,7 @@ gst='git status'
 ```
 
 - Shown only from the 2nd time within the last 7 days, so a one-off command stays quiet.
-- Counts come from the in-memory shell history, so they include the current session and are limited by `HISTSIZE`.
+- Counts come from the in-memory shell history, so they include the current session. Only the most recent 3000 entries are scanned (more than a week of typical use), which keeps the cost flat however large the history grows.
 - `aliasmiss off` / `aliasmiss on` switch it off and on, `aliasmiss status` shows the current state. The choice is remembered across shells by a marker file, `${XDG_STATE_HOME:-~/.local/state}/aliasmiss.off` (present means off); it lives outside the repo.
 
 ---

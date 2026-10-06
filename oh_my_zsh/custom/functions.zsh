@@ -548,14 +548,19 @@ _aliasmiss_hook() {
     done
     [[ -n "$name" ]] || return
 
-    # Typed text in history (the current line is already in it), within the last 7 days
-    count=$(fc -l -t %s 0 2>/dev/null | AM_CMD="$cand" LC_ALL=C awk -v since=$(( EPOCHSECONDS - 7 * 86400 )) '
+    # Typed text in history (the current line is already in it), within the last 7 days.
+    # fc must write to a plain file: piped or in $(...) it runs ~40x slower in a subshell, and only the
+    # most recent 3000 entries are listed so the cost stays flat however large the history grows.
+    local tmp="${TMPDIR:-/tmp}/aliasmiss.$$"
+    fc -l -t %s $(( HISTCMD > 3000 ? HISTCMD - 3000 : 0 )) >| "$tmp" 2>/dev/null
+    count=$(AM_CMD="$cand" LC_ALL=C awk -v since=$(( EPOCHSECONDS - 7 * 86400 )) '
         BEGIN { e = ENVIRON["AM_CMD"] }
         /^ *[0-9]+\*? +[0-9]+ / {
             t = $2; sub(/^ *[0-9]+\*? +[0-9]+ +/, "")
             if (t >= since && ($0 == e || index($0, e " ") == 1)) n++
         }
-        END { print n + 0 }')
+        END { print n + 0 }' "$tmp")
+    rm -f -- "$tmp"
 
     (( count >= 2 )) && print -P "%F{172}  ↳ '$name' missed: typed '$cand' in full ${count}x in the last 7 days%f"
 }
