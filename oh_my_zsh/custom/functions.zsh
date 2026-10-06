@@ -225,15 +225,35 @@ dotfiles-audit() {
 # ---------------------------------------------------------------------------
 
 # @desc: Lists every alias currently loaded in this shell, grouped by where it was defined (each enabled Oh My Zsh plugin, OMZ core lib, or your own aliases.zsh); no args shows groups with counts
-# @usage: aliasdoc [group | -s <keyword> | -a | -h]
+# @usage: aliasdoc [group | keyword | -s <keyword> | -a | -h]
 aliasdoc() {
     case "$1" in
         -h|--help)
-            echo "Usage: aliasdoc [group | -s <keyword> | -a]"
-            echo "  (no args)    list groups with alias counts"
-            echo "  <group>      show aliases in one group (e.g. git, brew, custom)"
-            echo "  -s <keyword> search alias names and expansions across all groups"
-            echo "  -a           list every alias, grouped, through a pager"
+            cat <<'EOF'
+aliasdoc - browse every alias loaded in this shell, grouped by where it was defined
+(each enabled Oh My Zsh plugin, omz-core, or your own custom/aliases.zsh)
+
+Usage: aliasdoc [group | keyword | -s <keyword> | -a | -h]
+
+  (no args)      list the groups with how many aliases each has
+  <group>        show the aliases of one group
+  <keyword>      if it is not a group name, search alias names and expansions
+  -s <keyword>   force a search, even if the word is also a group name
+  -a, --all      list every alias, grouped, through a pager (q to quit)
+  -h, --help     show this help
+
+Examples:
+  aliasdoc               which groups exist?
+  aliasdoc git           all git aliases
+  aliasdoc checkout      every alias whose name or command contains "checkout"
+  aliasdoc -s git        search for the word "git" across all groups,
+                         instead of showing the git group
+
+Notes:
+  - An exact group name always wins over a search; use -s to override.
+  - Matches are highlighted; colors are off when output is piped.
+  - After editing aliases or plugins, run 'reload' to refresh the list.
+EOF
             return 0
             ;;
     esac
@@ -266,30 +286,61 @@ aliasdoc() {
         printf "%s\t%s\t%s\n" "${owner[$name]:-other}" "$name" "${aliases[$name]//$'\n'/ }"
     done | sort -t$'\t' -k1,1 -k2,2)
 
+    # Colors only when writing to a terminal, so piping the output stays clean. The check runs here, before any pipe is set up.
+    local c_head="" c_name="" c_hit="" c_off=""
+    if [[ -t 1 ]]; then
+        c_head=$'\e[1;38;5;160m'; c_name=$'\e[1;32m'; c_hit=$'\e[1;4;38;5;33m'; c_off=$'\e[0m'
+    fi
+
+    # Renders rows as: heading per group, then indented "name  = expansion". Pads names itself (column -t would count the invisible color codes as width and misalign). Optional vars: only = show one group, kw = case-insensitive match on name/expansion, highlighted.
+    local render='
+        function hl(s, base,   i, out, l, k) {
+            if (kw == "") return base s o
+            k = tolower(kw); l = tolower(s); out = ""
+            while ((i = index(l, k)) > 0) {
+                out = out base substr(s, 1, i - 1) o t substr(s, i, length(kw)) o
+                s = substr(s, i + length(kw)); l = tolower(s)
+            }
+            return out base s o
+        }
+        only != "" && $1 != only { next }
+        kw != "" && index(tolower($2), tolower(kw)) == 0 && index(tolower($3), tolower(kw)) == 0 { next }
+        { n++; g[n] = $1; nm[n] = $2; ex[n] = $3; if (length($2) > w) w = length($2) }
+        END {
+            if (n == 0) { print "No aliases found."; exit }
+            for (i = 1; i <= n; i++) {
+                if (g[i] != last) { last = g[i]; printf "%s%s[%s]%s\n", (i > 1 ? "\n" : ""), h, g[i], o }
+                pad = ""; for (j = length(nm[i]); j < w; j++) pad = pad " "
+                printf "  %s%s = %s\n", hl(nm[i], c), pad, hl(ex[i], "")
+            }
+        }'
+    local -a awkvars=(-F'\t' -v h="$c_head" -v c="$c_name" -v t="$c_hit" -v o="$c_off")
+
     case "$1" in
         "")
             echo "Alias groups (run 'aliasdoc <group>' to see one, 'aliasdoc -s <word>' to search):"
-            print -r -- "$rows" | cut -f1 | uniq -c | awk '{printf "%s\t%s\n", $2, $1}' | column -t -s $'\t'
+            print -r -- "$rows" | cut -f1 | uniq -c | awk -v h="$c_head" -v o="$c_off" '
+                { g[NR] = $2; n[NR] = $1; if (length($2) > w) w = length($2) }
+                END { for (i = 1; i <= NR; i++) { pad = ""; for (j = length(g[i]); j < w; j++) pad = pad " "; printf "  %s%s%s%s  %s\n", h, g[i], o, pad, n[i] } }'
             ;;
         -a|--all)
-            print -r -- "$rows" | awk -F'\t' '
-                $1 != g { g = $1; printf "\n[%s]\n", g }
-                { printf "  %s\t= %s\n", $2, $3 }
-            ' | column -t -s $'\t' | ${PAGER:-less}
+            # less needs -R to pass the colors through instead of showing raw codes
+            print -r -- "$rows" | awk "${awkvars[@]}" "$render" | LESS="${LESS:--R}" ${PAGER:-less}
             ;;
         -s|--search)
             if [[ -z "$2" ]]; then
                 echo "Usage: aliasdoc -s <keyword>"
                 return 1
             fi
-            print -r -- "$rows" | grep -iF -- "$2" | awk -F'\t' '{ printf "%s\t%s\t= %s\n", $1, $2, $3 }' | column -t -s $'\t'
+            print -r -- "$rows" | awk "${awkvars[@]}" -v kw="$2" "$render"
             ;;
         *)
-            if ! print -r -- "$rows" | cut -f1 | grep -qxF -- "$1"; then
-                echo "aliasdoc: no group named '$1' — run 'aliasdoc' to see the groups"
-                return 1
+            # An exact group name shows that group; anything else is treated as a search keyword
+            if print -r -- "$rows" | cut -f1 | grep -qxF -- "$1"; then
+                print -r -- "$rows" | awk "${awkvars[@]}" -v only="$1" "$render"
+            else
+                print -r -- "$rows" | awk "${awkvars[@]}" -v kw="$1" "$render"
             fi
-            print -r -- "$rows" | awk -F'\t' -v g="$1" '$1 == g { printf "%s\t= %s\n", $2, $3 }' | column -t -s $'\t'
             ;;
     esac
 }

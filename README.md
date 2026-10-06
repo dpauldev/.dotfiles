@@ -119,6 +119,18 @@ Custom shell functions live in `oh_my_zsh/custom/functions.zsh`, each documented
 
 Run `fndoc` to list every custom function along with its usage and description, generated live from these tags — so this README never goes stale when a function is added.
 
+### Aliases
+
+Aliases come from two places: the Oh My Zsh plugins enabled in `~/.zshrc` (defined in memory by the plugin files, not in this repo) and your own in `oh_my_zsh/custom/aliases.zsh`. Run `aliasdoc` to browse them all, grouped by where they were defined (`git`, `brew`, `custom`, ...):
+
+- `aliasdoc` — list the groups with alias counts
+- `aliasdoc <group>` — show one group; any other word is searched for (names and expansions, with the match highlighted)
+- `aliasdoc -s <word>` — force a search, even when the word is also a group name
+- `aliasdoc -a` — everything, through a pager
+- `aliasdoc -h` — full help with examples
+
+Like `fndoc`, it reads live state, so it never needs updating when aliases change (run `reload` to pick up edits).
+
 ---
 
 ## Architecture
