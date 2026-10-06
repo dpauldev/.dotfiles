@@ -221,3 +221,75 @@ dotfiles-audit() {
     echo "--- Casks ---"
     comm -23 <(brew list --cask | sed -E 's#.*/##' | sort) <(echo "$declared")
 }
+
+# ---------------------------------------------------------------------------
+
+# @desc: Lists every alias currently loaded in this shell, grouped by where it was defined (each enabled Oh My Zsh plugin, OMZ core lib, or your own aliases.zsh); no args shows groups with counts
+# @usage: aliasdoc [group | -s <keyword> | -a | -h]
+aliasdoc() {
+    case "$1" in
+        -h|--help)
+            echo "Usage: aliasdoc [group | -s <keyword> | -a]"
+            echo "  (no args)    list groups with alias counts"
+            echo "  <group>      show aliases in one group (e.g. git, brew, custom)"
+            echo "  -s <keyword> search alias names and expansions across all groups"
+            echo "  -a           list every alias, grouped, through a pager"
+            return 0
+            ;;
+    esac
+
+    # Map each alias name to the group (plugin) whose source file defines it. Aliases live only in shell memory, so the only way to learn their origin is to scan the source files for "alias name=" lines.
+    local -A owner
+    local group f name
+    local -a srcs
+    for group in $plugins; do
+        srcs=($ZSH_CUSTOM/plugins/$group/*.zsh(N) $ZSH/plugins/$group/*.zsh(N))
+        for f in $srcs; do
+            for name in ${(f)"$(grep -oE '(^|&&|\|\|)[[:space:]]*alias( +-[gsm])* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +-[gsm])* +//; s/=$//; s/^["'\'']//; s/["'\'']$//')"}; do
+                [[ -z ${owner[$name]} ]] && owner[$name]=$group
+            done
+        done
+    done
+    for f in $ZSH/lib/*.zsh(N); do
+        for name in ${(f)"$(grep -oE '(^|&&|\|\|)[[:space:]]*alias( +-[gsm])* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +-[gsm])* +//; s/=$//')"}; do
+            [[ -z ${owner[$name]} ]] && owner[$name]="omz-core"
+        done
+    done
+    # Custom file is read last so your own definition wins when you override an OMZ alias
+    for name in ${(f)"$(grep -oE '(^|&&|\|\|)[[:space:]]*alias( +-[gsm])* +[^=[:space:]]+=' "$ZSH_CUSTOM/aliases.zsh" | sed -E 's/^.*alias( +-[gsm])* +//; s/=$//')"}; do
+        owner[$name]="custom"
+    done
+
+    # One tab-separated row per live alias: group, name, expansion
+    local rows
+    rows=$(for name in ${(ko)aliases}; do
+        printf "%s\t%s\t%s\n" "${owner[$name]:-other}" "$name" "${aliases[$name]//$'\n'/ }"
+    done | sort -t$'\t' -k1,1 -k2,2)
+
+    case "$1" in
+        "")
+            echo "Alias groups (run 'aliasdoc <group>' to see one, 'aliasdoc -s <word>' to search):"
+            print -r -- "$rows" | cut -f1 | uniq -c | awk '{printf "%s\t%s\n", $2, $1}' | column -t -s $'\t'
+            ;;
+        -a|--all)
+            print -r -- "$rows" | awk -F'\t' '
+                $1 != g { g = $1; printf "\n[%s]\n", g }
+                { printf "  %s\t= %s\n", $2, $3 }
+            ' | column -t -s $'\t' | ${PAGER:-less}
+            ;;
+        -s|--search)
+            if [[ -z "$2" ]]; then
+                echo "Usage: aliasdoc -s <keyword>"
+                return 1
+            fi
+            print -r -- "$rows" | grep -iF -- "$2" | awk -F'\t' '{ printf "%s\t%s\t= %s\n", $1, $2, $3 }' | column -t -s $'\t'
+            ;;
+        *)
+            if ! print -r -- "$rows" | cut -f1 | grep -qxF -- "$1"; then
+                echo "aliasdoc: no group named '$1' — run 'aliasdoc' to see the groups"
+                return 1
+            fi
+            print -r -- "$rows" | awk -F'\t' -v g="$1" '$1 == g { printf "%s\t= %s\n", $2, $3 }' | column -t -s $'\t'
+            ;;
+    esac
+}
