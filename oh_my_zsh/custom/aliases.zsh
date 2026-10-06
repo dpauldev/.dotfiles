@@ -16,6 +16,9 @@ alias cd..="cd .."
 # Shell
 alias reload="source ~/.zshrc"
 
+# Short form of the aliasdoc function (defined in functions.zsh) for browsing aliases; takes the same arguments, e.g. "ad git" or "ad -t"
+alias ad="aliasdoc"
+
 # Safety
 # Blocks '>' from silently overwriting an existing file (e.g. "echo x > f" fails if f already exists) — use '>|' instead when overwriting is intended
 set -o noclobber
