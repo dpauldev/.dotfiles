@@ -27,9 +27,9 @@ roles (see README.md for the full architecture diagram).
   fighting the include.
 - Custom shell functions live in `oh_my_zsh/custom/functions.zsh`, each
   documented with `@desc` / `@usage` / `@requires` / `@credit` tags. Run
-  `fndoc` to list them all. `dotfiles-audit` is the one you'll use most:
+  `fndoc` to list them all. `dotfiles-audit` is the most frequently used:
   it's read-only and diffs `brew leaves` / `brew list --cask` against
-  what's actually declared across the three Brewfiles, so you can see
+  what's actually declared across the three Brewfiles, to see
   what's installed-but-undeclared before anything gets added or removed.
 
 ## Package hygiene workflow

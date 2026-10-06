@@ -121,7 +121,7 @@ Run `fndoc` to list every custom function along with its usage and description, 
 
 ### Aliases
 
-Aliases come from two places: the Oh My Zsh plugins enabled in `~/.zshrc` (defined in memory by the plugin files, not in this repo) and your own in `oh_my_zsh/custom/aliases.zsh`. Run `aliasdoc` to browse them all, grouped by where they were defined (`git`, `brew`, `custom`, ...):
+Aliases come from two places: the Oh My Zsh plugins enabled in `~/.zshrc` (defined in memory by the plugin files, not in this repo) and the custom ones in `oh_my_zsh/custom/aliases.zsh`. Run `aliasdoc` to browse them all, grouped by where they were defined (`git`, `brew`, `custom`, ...):
 
 - `aliasdoc` — list the groups with alias counts
 - `aliasdoc <group>` — show one group; any other word is searched for (names and expansions, with the match highlighted)
@@ -165,7 +165,7 @@ Zsh configuration:
 
 ## Philosophy
 
-The goal is to keep my development environment:
+The goal is to keep the development environment:
 
 - Version controlled
 - Reproducible

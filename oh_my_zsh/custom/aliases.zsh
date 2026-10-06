@@ -4,8 +4,8 @@ alias aitools="cd ~/.aitools-config"
 alias home="cd ~"
 
 # .aitools-config scripts — aiinit copies a reusable template (CLAUDE.md,
-# AGENTS.md, a skill, a hook, an agent) into whatever project you're
-# currently in; ailink re-applies the symlinks/copies into ~/.claude,
+# AGENTS.md, a skill, a hook, an agent) into whatever project is
+# the current directory; ailink re-applies the symlinks/copies into ~/.claude,
 # Copilot, and Cline after editing anything under aitools-config/shared/
 alias aiinit="~/.aitools-config/scripts/init_project.sh"
 alias ailink="~/.aitools-config/scripts/setup_symlinks.sh"
@@ -17,7 +17,7 @@ alias cd..="cd .."
 alias reload="source ~/.zshrc"
 
 # Safety
-# Blocks '>' from silently overwriting an existing file (e.g. "echo x > f" fails if f already exists) — use '>|' instead when you really mean to
+# Blocks '>' from silently overwriting an existing file (e.g. "echo x > f" fails if f already exists) — use '>|' instead when overwriting is intended
 set -o noclobber
 
 # -i prompts "remove file? [y/n]" before each deletion — worth having since rm, unlike dragging a file to Trash, deletes permanently with no undo

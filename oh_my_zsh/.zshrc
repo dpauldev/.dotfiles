@@ -90,7 +90,7 @@ plugins=(
   gh
 )
 
-# Alias finder: suggest existing aliases for commands I type
+# Alias finder: suggest existing aliases for commands typed in the shell
 zstyle ':omz:plugins:alias-finder' autoload yes
 
 source $ZSH/oh-my-zsh.sh

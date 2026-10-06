@@ -231,7 +231,7 @@ aliasdoc() {
         -h|--help)
             cat <<'EOF'
 aliasdoc - browse every alias loaded in this shell, grouped by where it was defined
-(each enabled Oh My Zsh plugin, omz-core, or your own custom/aliases.zsh)
+(each enabled Oh My Zsh plugin, omz-core, or custom/aliases.zsh)
 
 Usage: aliasdoc [group | keyword | -s <keyword> | -a | -t [N] [-d DAYS] | -m [N] [-d DAYS] | -h]
 
@@ -287,7 +287,7 @@ EOF
             [[ -z ${owner[$name]} ]] && owner[$name]="omz-core"
         done
     done
-    # Custom file is read last so your own definition wins when you override an OMZ alias
+    # Custom file is read last so a custom definition wins when it overrides an OMZ alias
     for name in ${(f)"$(grep -oE '(^|&&|\|\|)[[:space:]]*alias( +-[gsm])* +[^=[:space:]]+=' "$ZSH_CUSTOM/aliases.zsh" | sed -E 's/^.*alias( +-[gsm])* +//; s/=$//')"}; do
         owner[$name]="custom"
     done
