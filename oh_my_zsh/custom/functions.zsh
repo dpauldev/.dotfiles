@@ -174,20 +174,39 @@ fndoc() {
         return 1
     fi
 
-    {
-        printf "NAME\tUSAGE\tDESCRIPTION\n"
-        printf "----\t-----\t-----------\n"
-        awk '
-            /^# @desc:/  { sub(/^# @desc:[ ]?/, ""); desc = $0 }
-            /^# @usage:/ { sub(/^# @usage:[ ]?/, ""); usage = $0 }
-            /^[a-zA-Z_][a-zA-Z0-9_-]*\(\) \{/ {
-                name = $0
-                sub(/\(\).*/, "", name)
-                printf "%s\t%s\t%s\n", name, usage, desc
-                desc = ""; usage = ""
+    # One block per function: name, then usage and description wrapped to the terminal width
+    # (column -t kept each function on one long line that the terminal then broke mid-word)
+    local c_name="" c_off="" width=${COLUMNS:-80}
+    [[ -t 1 ]] && { c_name=$'\e[1;32m'; c_off=$'\e[0m'; }
+    (( width < 40 )) && width=80    # COLUMNS can be tiny or unset when piped
+
+    awk -v w="$width" -v cn="$c_name" -v co="$c_off" '
+        function wrap(text, ind,    n, i, words, line, pad) {
+            pad = sprintf("%" ind "s", "")
+            n = split(text, words, " ")
+            line = pad
+            for (i = 1; i <= n; i++) {
+                if (length(line) + length(words[i]) + 1 > w && line != pad) {
+                    print line
+                    line = pad
+                }
+                line = line (line == pad ? "" : " ") words[i]
             }
-        ' "$file"
-    } | column -t -s $'\t'
+            if (line != pad) print line
+        }
+        /^# @desc:/  { sub(/^# @desc:[ ]?/, ""); desc = $0; more = 1; next }
+        /^#   /      { if (more) { sub(/^#[ ]+/, ""); desc = desc " " $0 }; next }
+        { more = 0 }
+        /^# @usage:/ { sub(/^# @usage:[ ]?/, ""); usage = $0 }
+        /^[a-zA-Z_][a-zA-Z0-9_-]*\(\) \{/ {
+            name = $0
+            sub(/\(\).*/, "", name)
+            print cn name co
+            if (usage != "") wrap("usage: " usage, 4)
+            if (desc != "")  wrap(desc, 4)
+            desc = ""; usage = ""
+        }
+    ' "$file"
 }
 
 # ---------------------------------------------------------------------------
