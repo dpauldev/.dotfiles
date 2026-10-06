@@ -131,7 +131,22 @@ Aliases come from two places: the Oh My Zsh plugins enabled in `~/.zshrc` (defin
 - `aliasdoc -m [N] [-d DAYS]` — "missed shortcuts": full commands typed repeatedly although an alias exists (`git status` → `gst`), most frequent first
 - `aliasdoc -h` — full help with examples
 
-Like `fndoc`, it reads live state, so it never needs updating when aliases change (run `reload` to pick up edits). The `-t` and `-m` reports read the shell history file (`$HISTFILE`, read-only), so they only cover as many commands as `SAVEHIST` keeps.
+`ad` is a short alias for `aliasdoc` and takes the same arguments (`ad git`, `ad -t`).
+
+Like `fndoc`, `aliasdoc` reads live state, so it never needs updating when aliases change (run `reload` to pick up edits). The `-t` and `-m` reports read the shell history file (`$HISTFILE`, read-only), so they only cover as many commands as `SAVEHIST` keeps.
+
+#### Missed-alias reminder
+
+The `alias-finder` plugin prints a hint such as `gst='git status'` after a command that has an alias. A small hook (`_aliasmiss_hook` in `functions.zsh`) runs right after it and adds how often that command was typed in full:
+
+```
+gst='git status'
+  ↳ 'gst' missed: typed 'git status' in full 12x in the last 7 days
+```
+
+- Shown only from the 2nd time within the last 7 days, so a one-off command stays quiet.
+- Counts come from the in-memory shell history, so they include the current session and are limited by `HISTSIZE`.
+- `aliasmiss off` / `aliasmiss on` switch it off and on, `aliasmiss status` shows the current state. The choice is remembered across shells by a marker file, `${XDG_STATE_HOME:-~/.local/state}/aliasmiss.off` (present means off); it lives outside the repo.
 
 ---
 

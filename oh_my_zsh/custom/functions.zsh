@@ -485,3 +485,62 @@ EOF
             ;;
     esac
 }
+
+# ---------------------------------------------------------------------------
+
+# @desc: Switches the missed-alias reminder on or off (it is on by default); the choice is remembered across shells via a marker file
+# @usage: aliasmiss [on | off | status]
+aliasmiss() {
+    local flag="${XDG_STATE_HOME:-$HOME/.local/state}/aliasmiss.off"
+
+    case "${1:-status}" in
+        on)
+            rm -f -- "$flag"
+            echo "aliasmiss: on"
+            ;;
+        off)
+            mkdir -p -- "${flag:h}" && : >| "$flag"
+            echo "aliasmiss: off"
+            ;;
+        status)
+            [[ -e "$flag" ]] && echo "aliasmiss: off" || echo "aliasmiss: on"
+            ;;
+        *)
+            echo "Usage: aliasmiss [on | off | status]"
+            return 1
+            ;;
+    esac
+}
+
+# @desc: Runs before each command (after alias-finder): when the command was typed in full although an alias exists, prints how many times it was typed in full in the last 7 days (shown from the 2nd time); toggled by aliasmiss
+# @usage: runs automatically via the preexec hook, no direct call needed
+_aliasmiss_hook() {
+    [[ -e "${XDG_STATE_HOME:-$HOME/.local/state}/aliasmiss.off" ]] && return
+
+    local line="${1//$'\n'/ }" cand name n count
+    local -a words=( ${=line} )
+    (( $#words )) || return
+
+    # Like alias-finder: drop trailing words until what is left is exactly an alias expansion
+    for (( n = $#words; n >= 1; n-- )); do
+        cand="${(j: :)words[1,n]}"
+        name="${(k)aliases[(re)$cand]}"
+        [[ -n "$name" ]] && break
+    done
+    [[ -n "$name" ]] || return
+
+    # Typed text in history (the current line is already in it), within the last 7 days
+    count=$(fc -l -t %s 0 2>/dev/null | AM_CMD="$cand" LC_ALL=C awk -v since=$(( EPOCHSECONDS - 7 * 86400 )) '
+        BEGIN { e = ENVIRON["AM_CMD"] }
+        /^ *[0-9]+\*? +[0-9]+ / {
+            t = $2; sub(/^ *[0-9]+\*? +[0-9]+ +/, "")
+            if (t >= since && ($0 == e || index($0, e " ") == 1)) n++
+        }
+        END { print n + 0 }')
+
+    (( count >= 2 )) && print -P "%F{172}  ↳ '$name' missed: typed '$cand' in full ${count}x in the last 7 days%f"
+}
+
+zmodload zsh/datetime    # provides EPOCHSECONDS, used for the 7-day window
+autoload -U add-zsh-hook
+add-zsh-hook preexec _aliasmiss_hook
