@@ -393,25 +393,25 @@ EOF
     for group in $plugins; do
         srcs=($ZSH_CUSTOM/plugins/$group/*.zsh(N) $ZSH/plugins/$group/*.zsh(N))
         for f in $srcs; do
-            for name in ${(f)"$(grep -oE '(^|&&|\|\|)[[:space:]]*alias( +-[gsm])* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +-[gsm])* +//; s/=$//; s/^["'\'']//; s/["'\'']$//')"}; do
+            for name in ${(f)"$(grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//; s/^["'\'']//; s/["'\'']$//')"}; do
                 [[ -z ${owner[$name]} ]] && owner[$name]=$group
             done
         done
     done
     for f in $ZSH/lib/*.zsh(N); do
-        for name in ${(f)"$(grep -oE '(^|&&|\|\|)[[:space:]]*alias( +-[gsm])* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +-[gsm])* +//; s/=$//')"}; do
+        for name in ${(f)"$(grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//')"}; do
             [[ -z ${owner[$name]} ]] && owner[$name]="omz-core"
         done
     done
     # Custom file is read last so a custom definition wins when it overrides an OMZ alias
-    for name in ${(f)"$(grep -oE '(^|&&|\|\|)[[:space:]]*alias( +-[gsm])* +[^=[:space:]]+=' "$ZSH_CUSTOM/aliases.zsh" | sed -E 's/^.*alias( +-[gsm])* +//; s/=$//')"}; do
+    for name in ${(f)"$(grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$ZSH_CUSTOM/aliases.zsh" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//')"}; do
         owner[$name]="custom"
     done
 
     # One tab-separated row per live alias: group, name, expansion
     local rows
-    rows=$(for name in ${(ko)aliases}; do
-        printf "%s\t%s\t%s\n" "${owner[$name]:-other}" "$name" "${aliases[$name]//$'\n'/ }"
+    rows=$(for name in ${(ko)aliases} ${(ko)galiases} ${(ko)saliases}; do
+        printf "%s\t%s\t%s\n" "${owner[$name]:-other}" "$name" "${${aliases[$name]:-${galiases[$name]:-${saliases[$name]}}}//$'\n'/ }"
     done | sort -t$'\t' -k1,1 -k2,2)
 
     # Colors only when writing to a terminal, so piping the output stays clean. The check runs here, before any pipe is set up.
