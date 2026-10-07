@@ -317,7 +317,9 @@ dotfiles-audit() {
 
     # Every brew/cask name declared across the shared file + this machine's role file, normalized to the final path segment so tap-qualified names (e.g. teamookla/speedtest/speedtest) compare equal regardless of qualification
     local declared
-    declared=$(grep -hE '^(brew|cask) ' "${files[@]}" | sed -E 's/^(brew|cask) "([^"]+)".*/\2/' | sed -E 's#.*/##' | sort -u)
+    # Lines may be indented and use single or double quotes; anything that is not a brew/cask line is ignored
+    local q="[\"']"
+    declared=$(sed -nE "s/^[[:space:]]*(brew|cask)[[:space:]]+${q}([^\"']+)${q}.*/\2/p" "${files[@]}" | sed -E 's#.*/##' | sort -u)
 
     echo "Installed but not tracked in Brewfile or Brewfile.$profile:"
     echo "--- Formulae (explicitly installed only, not auto-pulled dependencies) ---"
@@ -327,8 +329,8 @@ dotfiles-audit() {
 
     # The reverse direction: declared but not installed, e.g. a package removed with brew uninstall whose Brewfile line was left behind. Compared against every installed formula (not only leaves), since a declared formula may be installed as another package's dependency; formulae and casks are checked separately
     local declared_brews declared_casks
-    declared_brews=$(grep -hE '^brew ' "${files[@]}" | sed -E 's/^brew "([^"]+)".*/\1/' | sed -E 's#.*/##' | sort -u)
-    declared_casks=$(grep -hE '^cask ' "${files[@]}" | sed -E 's/^cask "([^"]+)".*/\1/' | sed -E 's#.*/##' | sort -u)
+    declared_brews=$(sed -nE "s/^[[:space:]]*brew[[:space:]]+${q}([^\"']+)${q}.*/\1/p" "${files[@]}" | sed -E 's#.*/##' | sort -u)
+    declared_casks=$(sed -nE "s/^[[:space:]]*cask[[:space:]]+${q}([^\"']+)${q}.*/\1/p" "${files[@]}" | sed -E 's#.*/##' | sort -u)
 
     echo
     echo "Tracked in Brewfile or Brewfile.$profile but not installed:"
