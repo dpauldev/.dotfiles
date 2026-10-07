@@ -27,7 +27,7 @@ set -o noclobber
 alias rmi="rm -i"
 
 # File operations
-# -i prompts before overwriting a file that already exists at the destination (same idea as rmi above, applied to copying/moving instead of deleting); -v prints each "source -> destination" pair as it happens, so you can onfirm what actually got copied or moved
+# -i prompts before overwriting a file that already exists at the destination (same idea as rmi above, applied to copying/moving instead of deleting); -v prints each "source -> destination" pair as it happens, so it is clear what actually got copied or moved
 alias cpi="cp -iv"
 alias mvi="mv -iv"
 
