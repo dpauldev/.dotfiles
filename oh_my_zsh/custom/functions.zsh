@@ -550,8 +550,9 @@ EOF
                 END { for (i = 1; i <= NR; i++) { pad = ""; for (j = length(g[i]); j < w; j++) pad = pad " "; printf "  %s%s%s%s  %s\n", h, g[i], o, pad, n[i] } }'
             ;;
         -a|--all)
-            # less needs -R to pass the colors through instead of showing raw codes
-            print -r -- "$rows" | awk "${awkvars[@]}" "$render" | LESS="${LESS:--R}" ${PAGER:-less}
+            # less needs -R to pass the colors through instead of showing raw codes; PAGER is split into words so a value with arguments (e.g. "less -F") works
+            local -a pager=( ${=PAGER:-less} )
+            print -r -- "$rows" | awk "${awkvars[@]}" "$render" | LESS="-R${LESS:+ $LESS}" "${pager[@]}"
             ;;
         -t|--top|-m|--missed)
             local mode=t n=15 days=""
