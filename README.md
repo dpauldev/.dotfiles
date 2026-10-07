@@ -152,7 +152,7 @@ gst='git status'
   ↳ 'gst' missed: typed 'git status' in full 12x in the last 7 days
 ```
 
-- Shown only from the 2nd time within the last 7 days, so a one-off command stays quiet.
+- Shown only from the 2nd time within the last 7 days, so a one-off command stays quiet. Aliases that save no typing (`ls='ls -G'`) are skipped, and a one-word expansion (`g='git'`) is only mentioned when the whole line is that word, so every `git ...` command is not counted as a miss.
 - Counts come from the in-memory shell history, so they include the current session and, with `SHARE_HISTORY` on, other open terminals. Only the most recent 3000 entries are scanned (more than a week of typical use), which keeps the cost flat however large the history grows. Two identical commands in a row are stored once (`histignoredups`), so back-to-back repeats count once.
 - `aliasmiss off` / `aliasmiss on` switch it off and on, `aliasmiss status` shows the current state. The choice is remembered across shells by a marker file, `${XDG_STATE_HOME:-~/.local/state}/aliasmiss.off` (present means off); it lives outside the repo.
 

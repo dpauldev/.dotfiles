@@ -646,12 +646,19 @@ aliasmiss() {
 _aliasmiss_hook() {
     [[ -e "${XDG_STATE_HOME:-$HOME/.local/state}/aliasmiss.off" ]] && return
 
+    # =~ sets MATCH, MBEGIN, MEND, match, mbegin and mend: keep them local so the user's own values are not overwritten on every command
+    local MATCH MBEGIN MEND; local -a match mbegin mend
     local line="${1//$'\n'/ }" cand name n count
+    line="${line#"${line%%[![:space:]]*}"}"
+    # Drop the leading words after which zsh still expands an alias (time, nocorrect, VAR=value, also quoted), as aliasdoc -t and -m do
+    local prefix="^(time|nocorrect|[A-Za-z_][A-Za-z0-9_]*=(\"[^\"]*\"|'[^']*'|[^ ]*)) +"
+    while [[ "$line" =~ $prefix ]]; do line="${line:${#MATCH}}"; done
     local -a words=( ${=line} ) names useful
     (( $#words )) || return
 
-    # Like alias-finder: drop trailing words until what is left is exactly an alias expansion; every alias sharing that expansion counts
-    for (( n = $#words; n >= 1; n-- )); do
+    # Like alias-finder: drop trailing words until what is left is exactly an alias expansion; every alias sharing that expansion counts. A one-word expansion (g=git) is only considered when the whole line is that word: otherwise every "git ..." command would count as a miss of g.
+    # The search starts at no more than 24 words, so a huge pasted line cannot make this loop slow; no alias expands to more words than that.
+    for (( n = ($#words > 24 ? 24 : $#words); n >= (($#words == 1 ? 1 : 2)); n-- )); do
         cand="${(j: :)words[1,n]}"
         names=( ${(k)aliases[(Re)$cand]} )
         (( $#names )) && break
@@ -664,21 +671,39 @@ _aliasmiss_hook() {
     done
     (( $#useful )) || return
 
-    # Typed text in history (the current line is already in it), within the last 7 days.
+    # Typed text in history (the line being typed is not stored yet, see below), within the last 7 days.
     # fc must write to a plain file: piped or in $(...) it runs ~40x slower in a subshell, and only the
     # most recent 3000 entries are listed so the cost stays flat however large the history grows.
     # The scratch file is private (mktemp creates it mode 600 with a random name), made once per shell,
     # emptied after each use so no history text lingers, and removed when the shell exits.
-    [[ -f "$_ALIASMISS_TMP" ]] || _ALIASMISS_TMP=$(mktemp "${TMPDIR:-/tmp}/aliasmiss.XXXXXX") || return
-    fc -l -t %s $(( HISTCMD > 3000 ? HISTCMD - 3000 : 0 )) >| "$_ALIASMISS_TMP" 2>/dev/null
-    count=$(AM_CMD="$cand" LC_ALL=C awk -v since=$(( EPOCHSECONDS - 7 * 86400 )) '
-        BEGIN { e = ENVIRON["AM_CMD"] }
-        /^ *[0-9]+\*? +[0-9]+ / {
-            t = $2; sub(/^ *[0-9]+\*? +[0-9]+ +/, "")
-            if (t >= since && ($0 == e || index($0, e " ") == 1)) n++
-        }
-        END { print n + 0 }' "$_ALIASMISS_TMP" 2>/dev/null)
-    : >| "$_ALIASMISS_TMP"
+    [[ -f "$_ALIASMISS_TMP" ]] || _ALIASMISS_TMP=$(mktemp "${TMPDIR:-/tmp}/aliasmiss.XXXXXX" 2>/dev/null) || return
+    # Lines that belong to a longer alias (git status --short has gss) are not counted for this one: the same longest-match rule as aliasdoc -m
+    local -a longer=( ${(u)${(v)aliases[(R)${(b)cand} *]}} )
+    {
+        fc -l -t %s $(( HISTCMD > 3000 ? HISTCMD - 3000 : 0 )) >| "$_ALIASMISS_TMP" 2>/dev/null
+        count=$(AM_CMD="$cand" AM_LONGER="${(F)longer}" LC_ALL=C awk -v since=$(( EPOCHSECONDS - 7 * 86400 )) '
+            BEGIN { e = ENVIRON["AM_CMD"]; multi = (index(e, " ") > 0); nl = split(ENVIRON["AM_LONGER"], lo, "\n") }
+            /^ *[0-9]+\*? +[0-9]+ / {
+                t = $2; sub(/^ *[0-9]+\*? +[0-9]+ +/, "")
+                # Same normalisation as the typed line: collapse blanks, drop time/nocorrect/VAR=value prefixes
+                gsub(/[ \t]+/, " "); sub(/^ /, ""); sub(/ $/, "")
+                while (1) {
+                    if ($0 ~ /^(time|nocorrect) /) sub(/^[^ ]+ /, "")
+                    else if ($0 ~ /^[A-Za-z_][A-Za-z0-9_]*=(\047[^\047]*\047|"[^"]*"|[^ ]*) /) sub(/^[A-Za-z_][A-Za-z0-9_]*=(\047[^\047]*\047|"[^"]*"|[^ ]*) /, "")
+                    else break
+                }
+                # "git status" also counts "git status --short"; a one-word match counts only that exact line
+                if (t >= since && ($0 == e || (multi && index($0, e " ") == 1))) {
+                    for (i = 1; i <= nl; i++) if ($0 == lo[i] || index($0, lo[i] " ") == 1) next
+                    n++
+                }
+            }
+            END { print n + 0 }' "$_ALIASMISS_TMP" 2>/dev/null)
+    } always {
+        : >| "$_ALIASMISS_TMP"    # runs even if the command is interrupted, so no history text stays behind
+    }
+    # zsh stores the line being typed only after preexec has run, so it is never in the listing above: count it here
+    (( count++ ))
 
     # print -r with literal escape codes, not print -P: alias values may contain % or $(...), which -P would interpret
     (( count >= 2 )) && print -r -- $'\e[38;5;172m'"  ↳ '${(oj:', ':)useful}' missed: typed '$cand' in full ${count}x in the last 7 days"$'\e[0m'
