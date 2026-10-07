@@ -421,7 +421,7 @@ EOF
         c_dim=$'\e[2m'; c_up=$'\e[32m'; c_down=$'\e[31m'; c_bar=$'\e[38;5;33m'
     fi
 
-    # Renders rows as: heading per group, then indented "name  = expansion". Pads names itself (column -t would count the invisible color codes as width and misalign). Optional vars: only = show one group, kw = case-insensitive match on name/expansion, highlighted.
+    # Renders rows as: heading per group, then indented "name  = expansion". Pads names itself (column -t would count the invisible color codes as width and misalign). Optional environment: AD_ONLY = show one group, AD_KW = case-insensitive match on name/expansion, highlighted (passed through the environment, not awk -v, which would interpret backslash escapes in the keyword).
     local render='
         function hl(s, base,   i, out, l, k) {
             if (kw == "") return base s o
@@ -432,6 +432,7 @@ EOF
             }
             return out base s o
         }
+        BEGIN { only = ENVIRON["AD_ONLY"]; kw = ENVIRON["AD_KW"] }
         only != "" && $1 != only { next }
         kw != "" && index(tolower($2), tolower(kw)) == 0 && index(tolower($3), tolower(kw)) == 0 { next }
         { n++; g[n] = $1; nm[n] = $2; ex[n] = $3; if (length($2) > w) w = length($2) }
@@ -590,14 +591,14 @@ EOF
                 echo "Usage: aliasdoc -s <keyword>"
                 return 1
             fi
-            print -r -- "$rows" | awk "${awkvars[@]}" -v kw="$2" "$render"
+            print -r -- "$rows" | AD_KW="$2" awk "${awkvars[@]}" "$render"
             ;;
         *)
             # An exact group name shows that group; anything else is treated as a search keyword
             if print -r -- "$rows" | cut -f1 | grep -qxF -- "$1"; then
-                print -r -- "$rows" | awk "${awkvars[@]}" -v only="$1" "$render"
+                print -r -- "$rows" | AD_ONLY="$1" awk "${awkvars[@]}" "$render"
             else
-                print -r -- "$rows" | awk "${awkvars[@]}" -v kw="$1" "$render"
+                print -r -- "$rows" | AD_KW="$1" awk "${awkvars[@]}" "$render"
             fi
             ;;
     esac
