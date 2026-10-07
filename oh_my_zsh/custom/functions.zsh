@@ -299,6 +299,11 @@ EOF
 # @desc: Audits installed Homebrew packages against this machine's active Brewfiles (shared Brewfile plus the role-specific Brewfile.dev or Brewfile.spare), listing anything installed but not tracked in either, and anything tracked but not installed
 # @usage: dotfiles-audit
 dotfiles-audit() {
+    if ! (( $+commands[brew] )); then
+        echo "dotfiles-audit: brew not found in PATH" >&2
+        return 1
+    fi
+
     local dotfiles="$HOME/.dotfiles"
     local profile
 
