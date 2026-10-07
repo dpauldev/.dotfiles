@@ -634,18 +634,22 @@ _aliasmiss_hook() {
     [[ -e "${XDG_STATE_HOME:-$HOME/.local/state}/aliasmiss.off" ]] && return
 
     local line="${1//$'\n'/ }" cand name n count
-    local -a words=( ${=line} )
+    local -a words=( ${=line} ) names useful
     (( $#words )) || return
 
-    # Like alias-finder: drop trailing words until what is left is exactly an alias expansion
+    # Like alias-finder: drop trailing words until what is left is exactly an alias expansion; every alias sharing that expansion counts
     for (( n = $#words; n >= 1; n-- )); do
         cand="${(j: :)words[1,n]}"
-        name="${(k)aliases[(re)$cand]}"
-        [[ -n "$name" ]] && break
+        names=( ${(k)aliases[(Re)$cand]} )
+        (( $#names )) && break
     done
-    [[ -n "$name" ]] || return
-    # No hint when the alias saves no typing: it is not shorter, or it is the same command with default flags (ls='ls -G')
-    (( $#name < $#cand )) && [[ "${cand%% *}" != "$name" ]] || return
+    (( $#names )) || return
+
+    # Only aliases that save typing: shorter than the command, and not the same command with default flags (ls='ls -G')
+    for name in $names; do
+        (( $#name < $#cand )) && [[ "${cand%% *}" != "$name" ]] && useful+=( "$name" )
+    done
+    (( $#useful )) || return
 
     # Typed text in history (the current line is already in it), within the last 7 days.
     # fc must write to a plain file: piped or in $(...) it runs ~40x slower in a subshell, and only the
@@ -664,7 +668,7 @@ _aliasmiss_hook() {
     : >| "$_ALIASMISS_TMP"
 
     # print -r with literal escape codes, not print -P: alias values may contain % or $(...), which -P would interpret
-    (( count >= 2 )) && print -r -- $'\e[38;5;172m'"  ↳ '$name' missed: typed '$cand' in full ${count}x in the last 7 days"$'\e[0m'
+    (( count >= 2 )) && print -r -- $'\e[38;5;172m'"  ↳ '${(oj:', ':)useful}' missed: typed '$cand' in full ${count}x in the last 7 days"$'\e[0m'
 }
 
 # Removes the scratch file the hook above creates; runs when the shell exits
