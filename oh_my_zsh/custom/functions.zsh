@@ -170,7 +170,8 @@ fndoc() {
     local file="$ZSH_CUSTOM/functions.zsh" only="" kw=""
 
     if [[ "$1" == (-h|--help) ]]; then
-        cat <<'EOF'
+        # command cat: a plain 'cat' here would expand the cat=bat alias when this function is defined, and bat would open a pager
+        command cat <<'EOF'
 fndoc - list the custom shell functions in functions.zsh with their usage and description,
 generated live from the @desc / @usage tags in the comment above each function
 
@@ -344,7 +345,7 @@ dotfiles-audit() {
 aliasdoc() {
     case "$1" in
         -h|--help)
-            cat <<'EOF'
+            command cat <<'EOF'
 aliasdoc - browse every alias loaded in this shell, grouped by where it was defined
 (each enabled Oh My Zsh plugin, omz-core, or custom/aliases.zsh)
 
