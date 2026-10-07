@@ -70,6 +70,7 @@ cask "aldente"
 # =====================================
 
 cask "brave-browser"
+cask "google-chrome"
 
 # =====================================
 # Personal Applications
