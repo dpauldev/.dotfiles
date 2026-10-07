@@ -402,22 +402,23 @@ EOF
     local -A owner
     local group f name
     local -a srcs
+    # Prints the names defined by "alias name=..." lines of the given files (also after && || ; and a case pattern's closing parenthesis; options -g -s -m and -- are skipped; quotes around a name are removed)
+    _alias_names() {
+        command grep -hoE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$@" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//; s/^["'\'']//; s/["'\'']$//'
+    }
     for f in $ZSH/lib/*.zsh(N); do
-        for name in ${(f)"$(command grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//')"}; do
-            owner[$name]="omz-core"
-        done
+        for name in ${(f)"$(_alias_names "$f")"}; do owner[$name]="omz-core"; done
     done
     for group in $plugins; do
-        srcs=($ZSH_CUSTOM/plugins/$group/*.zsh(N) $ZSH/plugins/$group/*.zsh(N))
+        # OMZ loads a plugin from the custom directory when it exists there, otherwise from its own
+        srcs=($ZSH_CUSTOM/plugins/$group/*.zsh(N))
+        (( $#srcs )) || srcs=($ZSH/plugins/$group/*.zsh(N))
         for f in $srcs; do
-            for name in ${(f)"$(command grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//; s/^["'\'']//; s/["'\'']$//')"}; do
-                owner[$name]=$group
-            done
+            for name in ${(f)"$(_alias_names "$f")"}; do owner[$name]=$group; done
         done
     done
-    for name in ${(f)"$(command grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$ZSH_CUSTOM/aliases.zsh" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//')"}; do
-        owner[$name]="custom"
-    done
+    for name in ${(f)"$(_alias_names "$ZSH_CUSTOM/aliases.zsh")"}; do owner[$name]="custom"; done
+    unfunction _alias_names
 
     # One tab-separated row per live alias: group, name, expansion
     local rows
