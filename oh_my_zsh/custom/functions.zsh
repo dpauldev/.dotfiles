@@ -393,24 +393,23 @@ EOF
             ;;
     esac
 
-    # Map each alias name to the group (plugin) whose source file defines it. Aliases live only in shell memory, so the only way to learn their origin is to scan the source files for "alias name=" lines.
+    # Map each alias name to the group (plugin) whose source file defines it. Aliases live only in shell memory, so the only way to learn their origin is to scan the source files for "alias name=" lines. Files are scanned in the order zsh loads them (OMZ lib, then each enabled plugin in order, then the custom file) and a later definition replaces an earlier one, because that is the definition that ends up live.
     local -A owner
     local group f name
     local -a srcs
+    for f in $ZSH/lib/*.zsh(N); do
+        for name in ${(f)"$(command grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//')"}; do
+            owner[$name]="omz-core"
+        done
+    done
     for group in $plugins; do
         srcs=($ZSH_CUSTOM/plugins/$group/*.zsh(N) $ZSH/plugins/$group/*.zsh(N))
         for f in $srcs; do
             for name in ${(f)"$(command grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//; s/^["'\'']//; s/["'\'']$//')"}; do
-                [[ -z ${owner[$name]} ]] && owner[$name]=$group
+                owner[$name]=$group
             done
         done
     done
-    for f in $ZSH/lib/*.zsh(N); do
-        for name in ${(f)"$(command grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//')"}; do
-            [[ -z ${owner[$name]} ]] && owner[$name]="omz-core"
-        done
-    done
-    # Custom file is read last so a custom definition wins when it overrides an OMZ alias
     for name in ${(f)"$(command grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$ZSH_CUSTOM/aliases.zsh" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//')"}; do
         owner[$name]="custom"
     done
