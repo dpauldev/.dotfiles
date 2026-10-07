@@ -380,8 +380,9 @@ Notes:
   - An exact group name always wins over a search; use -s to override.
   - Matches are highlighted; colors are off when output is piped.
   - -t and -m read $HISTFILE, so they only see what it keeps (SAVEHIST lines);
-    only the first word of a command is counted (a leading sudo is
-    ignored), so "a && b" counts "a".
+    only the first word of a command is counted (leading sudo, time, command,
+    nocorrect, noglob, builtin, exec and VAR=value words are ignored), so
+    "a && b" counts "a".
   - After editing aliases or plugins, run 'reload' to refresh the list.
 EOF
             return 0
@@ -470,8 +471,10 @@ EOF
             if (cmd == "") next
             lines++; if (min == 0 || ts < min) min = ts
             age = now - ts
-            cc = cmd; sub(/^sudo[ \t]+/, "", cc)
-            split(cc, wd, /[ \t]+/); w = wd[1]
+            # Collapse runs of blanks, then drop leading prefixes that do not change which command runs: sudo, time, command, ..., and VAR=value words
+            cc = cmd; gsub(/[ \t]+/, " ", cc)
+            while (cc ~ /^(sudo|time|command|nocorrect|noglob|builtin|exec) / || cc ~ /^[A-Za-z_][A-Za-z0-9_]*=[^ ]* /) sub(/^[^ ]+ /, "", cc)
+            split(cc, wd, " "); w = wd[1]
             if (mode == "m") {
                 if (days > 0 && age > days * 86400) next
                 if (!(w in cand)) next
