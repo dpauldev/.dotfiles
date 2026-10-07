@@ -342,7 +342,7 @@ dotfiles-audit() {
 
 # ---------------------------------------------------------------------------
 
-# @desc: Lists every alias currently loaded in this shell, grouped by where it was defined (each enabled Oh My Zsh plugin, OMZ core lib, or the custom aliases.zsh); no args shows groups with counts. -t ranks your most-used aliases from shell history with a trend, -m lists full commands you typed although an alias exists
+# @desc: Lists every alias currently loaded in this shell, grouped by where it was defined (each enabled Oh My Zsh plugin, omz-core, or the custom aliases.zsh); no args shows groups with counts. -t ranks the most-used aliases from shell history with a trend, -m lists commands typed in full although an alias exists
 # @usage: aliasdoc [group | keyword | -s <keyword> | -a | -t [N] [-d DAYS] | -m [N] [-d DAYS] | -h]
 aliasdoc() {
     case "$1" in
