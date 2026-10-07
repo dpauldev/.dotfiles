@@ -379,10 +379,10 @@ Examples:
 Notes:
   - An exact group name always wins over a search; use -s to override.
   - Matches are highlighted; colors are off when output is piped.
-  - -t and -m read $HISTFILE, so they only see what it keeps (SAVEHIST lines);
-    only the first word of a command is counted (leading sudo, time, command,
-    nocorrect, noglob, builtin, exec and VAR=value words are ignored), so
-    "a && b" counts "a".
+  - -t and -m read $HISTFILE, which must hold timestamps (EXTENDED_HISTORY), so
+    they only see what it keeps (SAVEHIST lines). Only the first word of a
+    command is counted (leading sudo, time, command, nocorrect, noglob,
+    builtin, exec and VAR=value words are ignored), so "a && b" counts "a".
   - After editing aliases or plugins, run 'reload' to refresh the list.
 EOF
             return 0

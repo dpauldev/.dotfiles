@@ -81,7 +81,7 @@ This repo supports more than one machine with different roles — a primary deve
 
 `scripts/install_packages.sh` always installs from the shared `Brewfile`, then detects which role-specific file to also install — by default via CPU architecture (`uname -m`), with an optional `~/.dotfiles-profile` file (kept outside the repo) as a manual override for cases where the chip alone isn't a reliable signal.
 
-Run `dotfiles-audit` to check both directions of drift on the current machine: packages installed but not yet tracked in either the shared or role-specific Brewfile, and packages tracked there but no longer installed (for example after a `brew uninstall`). It is read-only; edit the Brewfile yourself to resolve what it reports — see `fndoc` for full usage.
+Run `dotfiles-audit` to check both directions of drift on the current machine: packages installed but not yet tracked in either the shared or role-specific Brewfile, and packages tracked there but no longer installed (for example after a `brew uninstall`). It is read-only; the Brewfile needs editing by hand to resolve what it reports — see `fndoc` for full usage.
 
 ---
 
@@ -136,12 +136,12 @@ Aliases come from two places: the Oh My Zsh plugins enabled in `~/.zshrc` (defin
 - `aliasdoc -s <word>` — force a search, even when the word is also a group name
 - `aliasdoc -a` — everything, through a pager
 - `aliasdoc -t [N] [-d DAYS]` — the most-used aliases, from shell history, with a trend (last `DAYS` days vs the `DAYS` before, default 30) and a count of aliases never used
-- `aliasdoc -m [N] [-d DAYS]` — "missed shortcuts": full commands typed in full although an alias exists (`git status` → `gst`), most frequent first
-- `aliasdoc -h` — full help with examples
+- `aliasdoc -m [N] [-d DAYS]` — "missed shortcuts": commands typed in full although an alias exists (`git status` → `gst`), most frequent first; `-d DAYS` limits it to the last `DAYS` days (default: all history)
+- `aliasdoc -h` — full help with examples (the authoritative list of options)
 
 `ad` is a short alias for `aliasdoc` and takes the same arguments (`ad git`, `ad -t`).
 
-Like `fndoc`, `aliasdoc` reads live state, so it never needs updating when aliases change (run `reload` to pick up edits). The `-t` and `-m` reports read the shell history file (`$HISTFILE`, read-only), so they only cover as many commands as `SAVEHIST` keeps.
+Like `fndoc`, `aliasdoc` reads live state, so it never needs updating when aliases change (run `reload` to pick up edits). The `-t` and `-m` reports read the shell history file (`$HISTFILE`, read-only), so they only cover as many commands as `SAVEHIST` keeps, and they need timestamps in the history file (`EXTENDED_HISTORY`, set by Oh My Zsh).
 
 #### Missed-alias reminder
 
@@ -153,7 +153,7 @@ gst='git status'
 ```
 
 - Shown only from the 2nd time within the last 7 days, so a one-off command stays quiet.
-- Counts come from the in-memory shell history, so they include the current session. Only the most recent 3000 entries are scanned (more than a week of typical use), which keeps the cost flat however large the history grows. Two identical commands in a row are stored once (`histignoredups`), so back-to-back repeats count once.
+- Counts come from the in-memory shell history, so they include the current session and, with `SHARE_HISTORY` on, other open terminals. Only the most recent 3000 entries are scanned (more than a week of typical use), which keeps the cost flat however large the history grows. Two identical commands in a row are stored once (`histignoredups`), so back-to-back repeats count once.
 - `aliasmiss off` / `aliasmiss on` switch it off and on, `aliasmiss status` shows the current state. The choice is remembered across shells by a marker file, `${XDG_STATE_HOME:-~/.local/state}/aliasmiss.off` (present means off); it lives outside the repo.
 
 ---
