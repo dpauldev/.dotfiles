@@ -303,7 +303,7 @@ dotfiles-audit() {
     local profile
 
     if [[ -f "$HOME/.dotfiles-profile" ]]; then
-        profile=$(cat "$HOME/.dotfiles-profile" | tr -d '[:space:]')
+        profile=$(tr -d '[:space:]' < "$HOME/.dotfiles-profile")
     else
         case "$(uname -m)" in
             arm64) profile="dev" ;;
