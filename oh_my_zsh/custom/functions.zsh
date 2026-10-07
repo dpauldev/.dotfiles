@@ -313,7 +313,11 @@ dotfiles-audit() {
 
     local profile_file="$dotfiles/Brewfile.$profile"
     local files=("$dotfiles/Brewfile")
-    [[ -f "$profile_file" ]] && files+=("$profile_file")
+    if [[ -f "$profile_file" ]]; then
+        files+=("$profile_file")
+    else
+        echo "dotfiles-audit: $profile_file not found; checking only the shared Brewfile (set ~/.dotfiles-profile to pick another role)" >&2
+    fi
 
     # Names declared as brew (formulae) and as cask, normalized to the final path segment so tap-qualified names (e.g. teamookla/speedtest/speedtest) compare equal regardless of qualification. Lines may be indented and use single or double quotes; anything that is not a brew/cask line is ignored. Formulae and casks are kept apart so a formula tracked as a cask line (or the reverse) is still reported.
     local q="[\"']" declared_brews declared_casks
