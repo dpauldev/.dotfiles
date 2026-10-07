@@ -129,14 +129,14 @@ Text wraps to the terminal width, and `@desc` can continue over following commen
 
 ### Aliases
 
-Aliases come from two places: the Oh My Zsh plugins enabled in `~/.zshrc` (defined in memory by the plugin files, not in this repo) and the custom ones in `oh_my_zsh/custom/aliases.zsh`. Run `aliasdoc` to browse them all, grouped by where they were defined (`git`, `brew`, `custom`, ...):
+Aliases come from two places: the Oh My Zsh plugins enabled in `~/.zshrc` (defined in memory by the plugin files, not in this repo) and the custom ones in `oh_my_zsh/custom/aliases.zsh`. Run `aliasdoc` to browse them all, grouped by where they were defined (`git`, `brew`, `custom`, `omz-core` for the Oh My Zsh core library, `other` for anything else, ...):
 
 - `aliasdoc` — list the groups with alias counts
 - `aliasdoc <group>` — show one group; any other word is searched for (names and expansions, with the match highlighted)
 - `aliasdoc -s <word>` — force a search, even when the word is also a group name
 - `aliasdoc -a` — everything, through a pager
-- `aliasdoc -t [N] [-d DAYS]` — the most-used aliases, from shell history, with a trend (last `DAYS` days vs the `DAYS` before, default 30) and a count of aliases never used
-- `aliasdoc -m [N] [-d DAYS]` — "missed shortcuts": commands typed in full although an alias exists (`git status` → `gst`), most frequent first; `-d DAYS` limits it to the last `DAYS` days (default: all history)
+- `aliasdoc -t [N] [-d DAYS]` — the most-used aliases, from shell history, with a trend (last `DAYS` days vs the `DAYS` before, default 30) and a count of aliases never used (only the first word of a command is counted, after skipping leading `time`, `nocorrect` and `VAR=value` words)
+- `aliasdoc -m [N] [-d DAYS]` — "missed shortcuts": commands typed in full although an alias exists (`git status` → `gst`), most frequent first; `-d DAYS` limits it to the last `DAYS` days (default: all history). Only aliases for a multi-word command are considered, and a line counts toward the longest matching alias. Leading `time`, `nocorrect` and `VAR=value` words are ignored; `sudo` and `command` are not, because an alias does not expand after them
 - `aliasdoc -h` — full help with examples (the authoritative list of options)
 
 `ad` is a short alias for `aliasdoc` and takes the same arguments (`ad git`, `ad -t`).
@@ -145,16 +145,17 @@ Like `fndoc`, `aliasdoc` reads live state, so it never needs updating when alias
 
 #### Missed-alias reminder
 
-The `alias-finder` plugin prints a hint such as `gst='git status'` after a command that has an alias. A small hook (`_aliasmiss_hook` in `functions.zsh`) is registered after it, so its line appears underneath, and adds how often that command was typed in full. It works on its own: with the plugin disabled, only this line is printed.
+The `alias-finder` plugin prints a hint such as `gst='git status'` when a command that has an alias is entered. A small hook (`_aliasmiss_hook` in `functions.zsh`) is registered after it, so its line appears underneath, and adds how often that command was typed in full, with or without further arguments (`git status` also counts `git status --long`, but not `git status --short` when that has its own alias, `gss`). It works on its own: with the plugin disabled, only this line is printed.
 
 ```
 gst='git status'
   ↳ 'gst' missed: typed 'git status' in full 12x in the last 7 days
 ```
 
-- Shown only from the 2nd time within the last 7 days, so a one-off command stays quiet. Aliases that save no typing (`ls='ls -G'`) are skipped, and a one-word expansion (`g='git'`) is only mentioned when the whole line is that word, so every `git ...` command is not counted as a miss.
-- Counts come from the in-memory shell history, so they include the current session and, with `SHARE_HISTORY` on, other open terminals. Only the most recent 3000 entries are scanned (more than a week of typical use), which keeps the cost flat however large the history grows. Two identical commands in a row are stored once (`histignoredups`), so back-to-back repeats count once.
+- Shown only from the 2nd time within the last 7 days, so a one-off command stays quiet. Lines starting with `time`, `nocorrect` or `VAR=value` are matched as the command after them. Aliases that save no typing (`ls='ls -G'`) are skipped, and a one-word expansion (`g='git'`) is only mentioned when the whole line is that word, so every `git ...` command is not counted as a miss.
+- Counts come from the in-memory shell history, so they include the current session and, with `SHARE_HISTORY` on, other open terminals; the line being typed is always counted, even though zsh stores it only after the hook has run. Only the most recent 3000 entries are scanned, which bounds the cost whatever the history size (roughly 10 to 15 ms per hint). A shell that runs more than about 3000 commands in a week therefore undercounts. Two identical commands in a row are stored once (`histignoredups`), so back-to-back repeats count once, and a command typed with a leading space is never stored (`histignorespace`), so later hints do not count it.
 - `aliasmiss off` / `aliasmiss on` switch it off and on, `aliasmiss status` shows the current state. The choice is remembered across shells by a marker file, `${XDG_STATE_HOME:-~/.local/state}/aliasmiss.off` (present means off); it lives outside the repo.
+- The hook keeps one private (mode 600) scratch file per shell in `$TMPDIR`. It holds history text only while a hint is being computed, is emptied right after, and is removed when the shell exits; a shell killed with `SIGKILL` or replaced with `exec` can leave the file behind (usually empty).
 
 ---
 
