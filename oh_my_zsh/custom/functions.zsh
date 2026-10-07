@@ -164,47 +164,131 @@ te() {
 
 # ---------------------------------------------------------------------------
 
-# @desc: Lists all custom functions with their usage and description, parsed from the @desc/@usage tags in this file
-# @usage: fndoc
+# @desc: Lists all custom functions with their usage and description, parsed from the @desc/@usage tags in this file; a function name shows it in full, any other word searches, -h gives help
+# @usage: fndoc [name | keyword | -s <keyword> | -h]
 fndoc() {
-    local file="$ZSH_CUSTOM/functions.zsh"
+    local file="$ZSH_CUSTOM/functions.zsh" only="" kw=""
+
+    if [[ "$1" == (-h|--help) ]]; then
+        cat <<'EOF'
+fndoc - list the custom shell functions in functions.zsh with their usage and description,
+generated live from the @desc / @usage tags in the comment above each function
+
+Usage: fndoc [name | keyword | -s <keyword> | -h]
+
+  (no args)      list every function (names starting with _ are internal and hidden)
+  <name>         show one function in full, including its @requires and @credit
+  <keyword>      if it is not a function name, search names, usage and descriptions
+  -s <keyword>   force a search, even if the word is also a function name
+  -h, --help     show this help
+
+Examples:
+  fndoc                  which functions exist?
+  fndoc td               everything about td, including what it requires
+  fndoc translate        every function that mentions "translate"
+  fndoc -s fs            search for "fs" instead of showing the fs function
+  fndoc _aliasmiss_hook  internal helpers are hidden from the list but shown by name
+
+Notes:
+  - An exact function name always wins over a search; use -s to override.
+  - Matches are highlighted; colors are off when output is piped.
+  - Text wraps to the terminal width.
+  - To document a new function, put "# @desc:" and "# @usage:" comment lines directly above it.
+EOF
+        return
+    fi
 
     if [[ ! -f "$file" ]]; then
         echo "fndoc: functions file not found at $file"
         return 1
     fi
 
-    # One block per function: name, then usage and description wrapped to the terminal width
-    # (column -t kept each function on one long line that the terminal then broke mid-word)
-    local c_name="" c_off="" width=${COLUMNS:-80}
-    [[ -t 1 ]] && { c_name=$'\e[1;32m'; c_off=$'\e[0m'; }
-    (( width < 40 )) && width=80    # COLUMNS can be tiny or unset when piped
+    case "$1" in
+        "") ;;
+        -s|--search)
+            if [[ -z "$2" || $# -gt 2 ]]; then
+                echo "Usage: fndoc -s <keyword>"
+                return 1
+            fi
+            kw="$2"
+            ;;
+        -?*)
+            echo "fndoc: unknown option '$1' (see 'fndoc -h'; use -s to search for a word starting with a dash)"
+            return 1
+            ;;
+        *)
+            if (( $# > 1 )); then
+                echo "fndoc: unexpected argument '$2' (see 'fndoc -h'; quote a phrase to search for it)"
+                return 1
+            fi
+            # An exact function name shows that function; anything else is treated as a search keyword
+            if grep -qxF -- "$1() {" "$file"; then only="$1"; else kw="$1"; fi
+            ;;
+    esac
 
-    awk -v w="$width" -v cn="$c_name" -v co="$c_off" '
-        function wrap(text, ind,    n, i, words, line, pad) {
-            pad = sprintf("%" ind "s", "")
-            n = split(text, words, " ")
-            line = pad
-            for (i = 1; i <= n; i++) {
-                if (length(line) + length(words[i]) + 1 > w && line != pad) {
-                    print line
-                    line = pad
-                }
-                line = line (line == pad ? "" : " ") words[i]
+    # Colors only when printing to a terminal; COLUMNS is 0 or unset when the shell has no terminal (script, cron), so anything under 20 means "use 80"
+    local c_name="" c_hit="" c_off="" width=${COLUMNS:-80}
+    [[ -t 1 ]] && { c_name=$'\e[1;32m'; c_hit=$'\e[1;4;38;5;33m'; c_off=$'\e[0m'; }
+    (( width < 20 )) && width=80
+
+    # Entries are collected first so the name column can be sized to the longest name shown; text then
+    # wraps with a hanging indent under that column, like the option tables in aliasdoc -h
+    FNDOC_ONLY="$only" FNDOC_KW="$kw" awk -v w="$width" -v cn="$c_name" -v ch="$c_hit" -v co="$c_off" '
+        function spaces(n,    s) { s = ""; while (n-- > 0) s = s " "; return s }
+        # Wrap a hit in the search keyword (case-insensitive), then restore base so a colored name keeps its color
+        function hl(str, base,    out, pos, low) {
+            if (kw == "") return str
+            out = ""; low = tolower(str)
+            while ((pos = index(low, kwl)) > 0) {
+                out = out substr(str, 1, pos - 1) ch substr(str, pos, length(kw)) co base
+                str = substr(str, pos + length(kw)); low = substr(low, pos + length(kw))
             }
-            if (line != pad) print line
+            return out str
         }
-        /^# @desc:/  { sub(/^# @desc:[ ]?/, ""); desc = $0; more = 1; next }
-        /^#   /      { if (more) { sub(/^#[ ]+/, ""); desc = desc " " $0 }; next }
+        function emit(line) {
+            if (first) { printf "%s%s%s%s\n", cn, hl(cur, cn), co, (line == "" ? "" : spaces(nw - length(cur)) hl(line, "")); first = 0 }
+            else printf "%s%s\n", spaces(nw), hl(line, "")
+        }
+        function wrap(text,    n, i, words, line) {
+            n = split(text, words, " ")
+            line = ""
+            for (i = 1; i <= n; i++) {
+                if (line != "" && nw + length(line) + 1 + length(words[i]) > w) { emit(line); line = "" }
+                line = line (line == "" ? "" : " ") words[i]
+            }
+            if (line != "") emit(line)
+        }
+        BEGIN { only = ENVIRON["FNDOC_ONLY"]; kw = ENVIRON["FNDOC_KW"]; kwl = tolower(kw) }
+        /^# @desc:/     { sub(/^# @desc:[ ]?/, ""); desc = $0; more = 1; next }
+        /^#   /         { if (more) { sub(/^#[ ]+/, ""); desc = desc " " $0 }; next }
         { more = 0 }
-        /^# @usage:/ { sub(/^# @usage:[ ]?/, ""); usage = $0 }
+        /^# @usage:/    { sub(/^# @usage:[ ]?/, ""); usage = $0 }
+        /^# @requires:/ { sub(/^# @requires:[ ]?/, ""); req = $0 }
+        /^# @credit:/   { sub(/^# @credit:[ ]?/, ""); cred = $0 }
         /^[a-zA-Z_][a-zA-Z0-9_-]*\(\) \{/ {
             name = $0
             sub(/\(\).*/, "", name)
-            print cn name co
-            if (usage != "") wrap("usage: " usage, 4)
-            if (desc != "")  wrap(desc, 4)
-            desc = ""; usage = ""
+            show = 0
+            if (only != "")      show = (name == only)
+            else if (kw != "")   show = (index(tolower(name " " usage " " desc), kwl) > 0)
+            else                 show = (name !~ /^_/)
+            if (show) { n++; names[n] = name; descs[n] = desc; usages[n] = usage; reqs[n] = req; creds[n] = cred }
+            desc = ""; usage = ""; req = ""; cred = ""
+        }
+        END {
+            if (n == 0) { print "fndoc: no function matches \"" kw "\""; exit 1 }
+            for (i = 1; i <= n; i++) if (length(names[i]) > maxlen) maxlen = length(names[i])
+            nw = maxlen + 2
+            for (i = 1; i <= n; i++) {
+                cur = names[i]; first = 1
+                if (descs[i] != "")  wrap(descs[i])
+                if (usages[i] != "") wrap("usage: " usages[i])
+                if (only != "") {
+                    if (reqs[i] != "")  wrap("requires: " reqs[i])
+                    if (creds[i] != "") wrap("credit: " creds[i])
+                }
+                if (first) emit("")
+            }
         }
     ' "$file"
 }
