@@ -81,7 +81,7 @@ This repo supports more than one machine with different roles — a primary deve
 
 `scripts/install_packages.sh` always installs from the shared `Brewfile`, then detects which role-specific file to also install — by default via CPU architecture (`uname -m`), with an optional `~/.dotfiles-profile` file (kept outside the repo) as a manual override for cases where the chip alone isn't a reliable signal.
 
-Run `dotfiles-audit` to check for packages installed on the current machine but not yet tracked in either the shared or role-specific Brewfile — see `fndoc` for full usage.
+Run `dotfiles-audit` to check both directions of drift on the current machine: packages installed but not yet tracked in either the shared or role-specific Brewfile, and packages tracked there but no longer installed (for example after a `brew uninstall`). It is read-only; edit the Brewfile yourself to resolve what it reports — see `fndoc` for full usage.
 
 ---
 

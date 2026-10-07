@@ -211,7 +211,7 @@ fndoc() {
 
 # ---------------------------------------------------------------------------
 
-# @desc: Audits installed Homebrew packages against this machine's active Brewfiles (shared Brewfile plus the role-specific Brewfile.dev or Brewfile.spare), listing anything installed but not tracked in either
+# @desc: Audits installed Homebrew packages against this machine's active Brewfiles (shared Brewfile plus the role-specific Brewfile.dev or Brewfile.spare), listing anything installed but not tracked in either, and anything tracked but not installed
 # @usage: dotfiles-audit
 dotfiles-audit() {
     local dotfiles="$HOME/.dotfiles"
@@ -239,6 +239,18 @@ dotfiles-audit() {
     comm -23 <(brew leaves | sed -E 's#.*/##' | sort) <(echo "$declared")
     echo "--- Casks ---"
     comm -23 <(brew list --cask | sed -E 's#.*/##' | sort) <(echo "$declared")
+
+    # The reverse direction: declared but not installed, e.g. a package removed with brew uninstall whose Brewfile line was left behind. Compared against every installed formula (not only leaves), since a declared formula may be installed as another package's dependency; formulae and casks are checked separately
+    local declared_brews declared_casks
+    declared_brews=$(grep -hE '^brew ' "${files[@]}" | sed -E 's/^brew "([^"]+)".*/\1/' | sed -E 's#.*/##' | sort -u)
+    declared_casks=$(grep -hE '^cask ' "${files[@]}" | sed -E 's/^cask "([^"]+)".*/\1/' | sed -E 's#.*/##' | sort -u)
+
+    echo
+    echo "Tracked in Brewfile or Brewfile.$profile but not installed:"
+    echo "--- Formulae ---"
+    comm -13 <(brew list --formula | sed -E 's#.*/##' | sort) <(echo "$declared_brews")
+    echo "--- Casks ---"
+    comm -13 <(brew list --cask | sed -E 's#.*/##' | sort) <(echo "$declared_casks")
 }
 
 # ---------------------------------------------------------------------------
