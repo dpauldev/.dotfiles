@@ -381,8 +381,9 @@ Notes:
   - Matches are highlighted; colors are off when output is piped.
   - -t and -m read $HISTFILE, which must hold timestamps (EXTENDED_HISTORY), so
     they only see what it keeps (SAVEHIST lines). Only the first word of a
-    command is counted (leading sudo, time, command, nocorrect, noglob,
-    builtin, exec and VAR=value words are ignored), so "a && b" counts "a".
+    command is counted (leading time, nocorrect and VAR=value words are ignored, since an alias
+    still expands after them; after sudo, command and the like it does not),
+    so "a && b" counts "a".
   - After editing aliases or plugins, run 'reload' to refresh the list.
 EOF
             return 0
@@ -449,7 +450,7 @@ EOF
         }'
     local -a awkvars=(-F'\t' -v h="$c_head" -v c="$c_name" -v t="$c_hit" -v o="$c_off")
 
-    # Usage statistics from the shell history. Reads two inputs: the alias rows, then the history file (extended format ": <epoch>:0;<command>"; continuation lines are skipped). mode=t counts how often each alias is typed (first word, optional sudo) with a trend of the last <days> days against the <days> before; mode=m finds full commands that match an alias expansion (longest expansion wins) although the alias was not used.
+    # Usage statistics from the shell history. Reads two inputs: the alias rows, then the history file (extended format ": <epoch>:0;<command>"; continuation lines are skipped). mode=t counts how often each alias is typed (first word, after the prefixes that keep alias expansion) with a trend of the last <days> days against the <days> before; mode=m finds full commands that match an alias expansion (longest expansion wins) although the alias was not used.
     local stats='
         function padr(s, w,   r, j) { r = s; for (j = length(s); j < w; j++) r = r " "; return r }
         function padl(s, w,   r, j) { r = s; for (j = length(s); j < w; j++) r = " " r; return r }
@@ -466,14 +467,19 @@ EOF
             raw++
             if ($0 !~ /^: [0-9]+:[0-9]+;/) next
             match($0, /^: [0-9]+/); ts = substr($0, 3, RLENGTH - 2) + 0
+            if (ts > now) ts = now    # a timestamp in the future (clock change) counts as just now
             cmd = substr($0, index($0, ";") + 1)
             sub(/^[ \t]+/, "", cmd); sub(/[ \t]+$/, "", cmd)
             if (cmd == "") next
             lines++; if (min == 0 || ts < min) min = ts
             age = now - ts
-            # Collapse runs of blanks, then drop leading prefixes that do not change which command runs: sudo, time, command, ..., and VAR=value words
+            # Collapse runs of blanks, then drop the leading words after which zsh still expands an alias: time, nocorrect and VAR=value assignments (also quoted). sudo, command, builtin, exec and noglob stop alias expansion, so a line starting with them is not an alias use and cannot be shortened by one.
             cc = cmd; gsub(/[ \t]+/, " ", cc)
-            while (cc ~ /^(sudo|time|command|nocorrect|noglob|builtin|exec) / || cc ~ /^[A-Za-z_][A-Za-z0-9_]*=[^ ]* /) sub(/^[^ ]+ /, "", cc)
+            while (1) {
+                if (cc ~ /^(time|nocorrect) /) sub(/^[^ ]+ /, "", cc)
+                else if (cc ~ /^[A-Za-z_][A-Za-z0-9_]*=(\047[^\047]*\047|"[^"]*"|[^ ]*) /) sub(/^[A-Za-z_][A-Za-z0-9_]*=(\047[^\047]*\047|"[^"]*"|[^ ]*) /, "", cc)
+                else break
+            }
             split(cc, wd, " "); w = wd[1]
             if (mode == "m") {
                 if (days > 0 && age > days * 86400) next
