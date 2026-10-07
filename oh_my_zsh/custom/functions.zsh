@@ -637,13 +637,24 @@ EOF
 aliasmiss() {
     local flag="${XDG_STATE_HOME:-$HOME/.local/state}/aliasmiss.off"
 
+    if (( $# > 1 )); then
+        echo "Usage: aliasmiss [on | off | status]"
+        return 1
+    fi
+
     case "${1:-status}" in
         on)
-            rm -f -- "$flag"
+            if ! rm -f -- "$flag" 2>/dev/null; then
+                echo "aliasmiss: cannot remove $flag, so the reminder stays off" >&2
+                return 1
+            fi
             echo "aliasmiss: on"
             ;;
         off)
-            mkdir -p -- "${flag:h}" && : >| "$flag"
+            if ! { mkdir -p -- "${flag:h}" && : >| "$flag" } 2>/dev/null; then
+                echo "aliasmiss: cannot create $flag, so the reminder stays on" >&2
+                return 1
+            fi
             echo "aliasmiss: off"
             ;;
         status)
