@@ -223,7 +223,7 @@ EOF
                 return 1
             fi
             # An exact function name shows that function; anything else is treated as a search keyword
-            if grep -qxF -- "$1() {" "$file"; then only="$1"; else kw="$1"; fi
+            if command grep -qxF -- "$1() {" "$file"; then only="$1"; else kw="$1"; fi
             ;;
     esac
 
@@ -397,18 +397,18 @@ EOF
     for group in $plugins; do
         srcs=($ZSH_CUSTOM/plugins/$group/*.zsh(N) $ZSH/plugins/$group/*.zsh(N))
         for f in $srcs; do
-            for name in ${(f)"$(grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//; s/^["'\'']//; s/["'\'']$//')"}; do
+            for name in ${(f)"$(command grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//; s/^["'\'']//; s/["'\'']$//')"}; do
                 [[ -z ${owner[$name]} ]] && owner[$name]=$group
             done
         done
     done
     for f in $ZSH/lib/*.zsh(N); do
-        for name in ${(f)"$(grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//')"}; do
+        for name in ${(f)"$(command grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$f" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//')"}; do
             [[ -z ${owner[$name]} ]] && owner[$name]="omz-core"
         done
     done
     # Custom file is read last so a custom definition wins when it overrides an OMZ alias
-    for name in ${(f)"$(grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$ZSH_CUSTOM/aliases.zsh" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//')"}; do
+    for name in ${(f)"$(command grep -oE '(^|&&|\|\||;|\))[[:space:]]*alias( +(-[gsm]|--))* +[^=[:space:]]+=' "$ZSH_CUSTOM/aliases.zsh" | sed -E 's/^.*alias( +(-[gsm]|--))* +//; s/=$//')"}; do
         owner[$name]="custom"
     done
 
@@ -606,7 +606,7 @@ EOF
             ;;
         *)
             # An exact group name shows that group; anything else is treated as a search keyword
-            if print -r -- "$rows" | cut -f1 | grep -qxF -- "$1"; then
+            if print -r -- "$rows" | cut -f1 | command grep -qxF -- "$1"; then
                 print -r -- "$rows" | AD_ONLY="$1" awk "${awkvars[@]}" "$render"
             else
                 print -r -- "$rows" | AD_KW="$1" awk "${awkvars[@]}" "$render"
