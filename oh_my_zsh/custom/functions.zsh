@@ -452,7 +452,7 @@ EOF
         function when(t,   dd) { dd = int((now - t) / 86400); return (dd == 0) ? "today" : dd "d ago" }
         FNR == NR {
             isal[$2] = 1; ex[$2] = $3; total++
-            if (mode == "m" && index($3, " ") > 0 && length($2) < length($3)) {
+            if (mode == "m" && index($3, " ") > 0 && length($2) < length($3) && $2 != substr($3, 1, index($3, " ") - 1)) {
                 names[$3] = ($3 in names) ? names[$3] ", " $2 : $2
                 if (!($3 in seen)) { seen[$3] = 1; split($3, fwp, " "); cand[fwp[1]] = cand[fwp[1]] "\n" $3 }
             }
@@ -644,6 +644,8 @@ _aliasmiss_hook() {
         [[ -n "$name" ]] && break
     done
     [[ -n "$name" ]] || return
+    # No hint when the alias saves no typing: it is not shorter, or it is the same command with default flags (ls='ls -G')
+    (( $#name < $#cand )) && [[ "${cand%% *}" != "$name" ]] || return
 
     # Typed text in history (the current line is already in it), within the last 7 days.
     # fc must write to a plain file: piped or in $(...) it runs ~40x slower in a subshell, and only the
