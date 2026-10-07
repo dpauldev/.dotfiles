@@ -650,21 +650,30 @@ _aliasmiss_hook() {
     # Typed text in history (the current line is already in it), within the last 7 days.
     # fc must write to a plain file: piped or in $(...) it runs ~40x slower in a subshell, and only the
     # most recent 3000 entries are listed so the cost stays flat however large the history grows.
-    local tmp="${TMPDIR:-/tmp}/aliasmiss.$$"
-    fc -l -t %s $(( HISTCMD > 3000 ? HISTCMD - 3000 : 0 )) >| "$tmp" 2>/dev/null
+    # The scratch file is private (mktemp creates it mode 600 with a random name), made once per shell,
+    # emptied after each use so no history text lingers, and removed when the shell exits.
+    [[ -f "$_ALIASMISS_TMP" ]] || _ALIASMISS_TMP=$(mktemp "${TMPDIR:-/tmp}/aliasmiss.XXXXXX") || return
+    fc -l -t %s $(( HISTCMD > 3000 ? HISTCMD - 3000 : 0 )) >| "$_ALIASMISS_TMP" 2>/dev/null
     count=$(AM_CMD="$cand" LC_ALL=C awk -v since=$(( EPOCHSECONDS - 7 * 86400 )) '
         BEGIN { e = ENVIRON["AM_CMD"] }
         /^ *[0-9]+\*? +[0-9]+ / {
             t = $2; sub(/^ *[0-9]+\*? +[0-9]+ +/, "")
             if (t >= since && ($0 == e || index($0, e " ") == 1)) n++
         }
-        END { print n + 0 }' "$tmp")
-    rm -f -- "$tmp"
+        END { print n + 0 }' "$_ALIASMISS_TMP" 2>/dev/null)
+    : >| "$_ALIASMISS_TMP"
 
     # print -r with literal escape codes, not print -P: alias values may contain % or $(...), which -P would interpret
     (( count >= 2 )) && print -r -- $'\e[38;5;172m'"  ↳ '$name' missed: typed '$cand' in full ${count}x in the last 7 days"$'\e[0m'
 }
 
+# Removes the scratch file the hook above creates; runs when the shell exits
+_aliasmiss_cleanup() {
+    [[ -n "$_ALIASMISS_TMP" ]] && rm -f -- "$_ALIASMISS_TMP"
+}
+
+: ${_ALIASMISS_TMP:=}    # keeps its value if this file is sourced again by reload
 zmodload zsh/datetime    # provides EPOCHSECONDS, used for the 7-day window
 autoload -U add-zsh-hook
 add-zsh-hook preexec _aliasmiss_hook
+add-zsh-hook zshexit _aliasmiss_cleanup
