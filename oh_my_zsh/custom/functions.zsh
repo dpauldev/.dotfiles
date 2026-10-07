@@ -376,9 +376,13 @@ Notes:
   - Matches are highlighted; colors are off when output is piped.
   - -t and -m read $HISTFILE, which must hold timestamps (EXTENDED_HISTORY), so
     they only see what it keeps (SAVEHIST lines). Only the first word of a
-    command is counted (leading time, nocorrect and VAR=value words are ignored, since an alias
-    still expands after them; after sudo, command and the like it does not),
-    so "a && b" counts "a".
+    command is counted (leading time, nocorrect and VAR=value words are
+    ignored, since an alias still expands after them; after sudo, command
+    and the like it does not), so "a && b" counts "a".
+  - A group is found by scanning the plugin and custom source files for
+    "alias name=" lines; aliases created any other way (loops, eval) and
+    zsh's own defaults (such as run-help and which-command) are listed under
+    "other".
   - After editing aliases or plugins, run 'reload' to refresh the list.
 EOF
             return 0
@@ -557,6 +561,10 @@ EOF
                 END { for (i = 1; i <= NR; i++) { pad = ""; for (j = length(g[i]); j < w; j++) pad = pad " "; printf "  %s%s%s%s  %s\n", h, g[i], o, pad, n[i] } }'
             ;;
         -a|--all)
+            if (( $# > 1 )); then
+                echo "aliasdoc: unexpected argument '$2' (see 'aliasdoc -h')"
+                return 1
+            fi
             # less needs -R to pass the colors through instead of showing raw codes; PAGER is split into words so a value with arguments (e.g. "less -F") works
             local -a pager=( ${=PAGER:-less} )
             print -r -- "$rows" | awk "${awkvars[@]}" "$render" | LESS="-R${LESS:+ $LESS}" "${pager[@]}"
@@ -593,13 +601,21 @@ EOF
                 "$stats" <(print -r -- "$rows") "$HISTFILE"
             ;;
         -s|--search)
-            if [[ -z "$2" ]]; then
+            if [[ -z "$2" || $# -gt 2 ]]; then
                 echo "Usage: aliasdoc -s <keyword>"
                 return 1
             fi
             print -r -- "$rows" | AD_KW="$2" awk "${awkvars[@]}" "$render"
             ;;
+        -?*)
+            echo "aliasdoc: unknown option '$1' (see 'aliasdoc -h'; use -s to search for a word starting with a dash)"
+            return 1
+            ;;
         *)
+            if (( $# > 1 )); then
+                echo "aliasdoc: unexpected argument '$2' (see 'aliasdoc -h'; quote a phrase to search for it)"
+                return 1
+            fi
             # An exact group name shows that group; anything else is treated as a search keyword
             if print -r -- "$rows" | cut -f1 | command grep -qxF -- "$1"; then
                 print -r -- "$rows" | AD_ONLY="$1" awk "${awkvars[@]}" "$render"
