@@ -418,7 +418,7 @@ EOF
     # One tab-separated row per live alias: group, name, expansion
     local rows
     rows=$(for name in ${(ko)aliases} ${(ko)galiases} ${(ko)saliases}; do
-        printf "%s\t%s\t%s\n" "${owner[$name]:-other}" "$name" "${${aliases[$name]:-${galiases[$name]:-${saliases[$name]}}}//$'\n'/ }"
+        printf "%s\t%s\t%s\n" "${owner[$name]:-other}" "$name" "${${aliases[$name]:-${galiases[$name]:-${saliases[$name]}}}//[$'\n\t']/ }"
     done | sort -t$'\t' -k1,1 -k2,2)
 
     # Colors only when writing to a terminal, so piping the output stays clean. The check runs here, before any pipe is set up.
