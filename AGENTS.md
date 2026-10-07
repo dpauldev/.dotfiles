@@ -29,15 +29,16 @@ roles (see README.md for the full architecture diagram).
   documented with `@desc` / `@usage` / `@requires` / `@credit` tags. Run
   `fndoc` to list them all. `dotfiles-audit` is the most frequently used:
   it's read-only and diffs `brew leaves` / `brew list --cask` against
-  what's actually declared across the three Brewfiles, to see
-  what's installed-but-undeclared before anything gets added or removed.
+  what's declared in the shared Brewfile and this machine's role file, to see
+  what's installed-but-undeclared (and, in a second section, declared-but-
+  uninstalled) before anything gets added or removed.
 
 ## Package hygiene workflow
 
 When asked to clean up or audit installed packages, follow this order and
 stop between steps for confirmation before anything destructive:
 
-1. `dotfiles-audit` — read-only, see what's undeclared.
+1. `dotfiles-audit` — read-only, see what's undeclared or no longer installed.
 2. `brew autoremove -n` — dry run, to distinguish real orphaned
    dependencies from formulae the user explicitly asked for
    (`brew list --installed-on-request`). Never treat `brew autoremove`'s
