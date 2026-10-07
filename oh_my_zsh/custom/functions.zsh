@@ -659,7 +659,8 @@ _aliasmiss_hook() {
         END { print n + 0 }' "$tmp")
     rm -f -- "$tmp"
 
-    (( count >= 2 )) && print -P "%F{172}  ↳ '$name' missed: typed '$cand' in full ${count}x in the last 7 days%f"
+    # print -r with literal escape codes, not print -P: alias values may contain % or $(...), which -P would interpret
+    (( count >= 2 )) && print -r -- $'\e[38;5;172m'"  ↳ '$name' missed: typed '$cand' in full ${count}x in the last 7 days"$'\e[0m'
 }
 
 zmodload zsh/datetime    # provides EPOCHSECONDS, used for the 7-day window
