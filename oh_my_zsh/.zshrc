@@ -3,15 +3,11 @@
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
-# Modern CLI tools
-eval "$(zoxide init zsh)"
-eval "$(starship init zsh)"
-
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time Oh My Zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="robbyrussell"
+ZSH_THEME=""
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -94,6 +90,9 @@ plugins=(
 zstyle ':omz:plugins:alias-finder' autoload yes
 
 source $ZSH/oh-my-zsh.sh
+
+# Starship prompt: must come after oh-my-zsh.sh so nothing overwrites it
+command -v starship >/dev/null && eval "$(starship init zsh)"
 
 # User configuration
 
