@@ -13,3 +13,8 @@ else
     export EDITOR="vim"
     export VISUAL="vim"
 fi
+
+
+# bat (cat replacement)
+# Read settings from the version-controlled dotfiles instead of ~/.config/bat
+export BAT_CONFIG_PATH="$HOME/.dotfiles/bat/config"

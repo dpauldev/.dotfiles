@@ -1,0 +1,3 @@
+# bat settings
+# Colour the separate Claude SSH config as an SSH config
+--map-syntax "config_*:SSH Config"
