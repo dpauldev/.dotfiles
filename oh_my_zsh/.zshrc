@@ -122,3 +122,6 @@ command -v starship >/dev/null && eval "$(starship init zsh)"
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+
+# Local helper scripts. Added at the END so system commands always win.
+export PATH="$PATH:$HOME/.local/bin"
