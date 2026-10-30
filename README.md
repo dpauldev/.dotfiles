@@ -28,6 +28,9 @@ automation, and terminal workflow optimization.
 ├── Brewfile.dev
 ├── Brewfile.spare
 │
+├── docs/
+│   └── iterm-tab-colours.md
+│
 ├── git/
 │   └── .gitconfig
 │
@@ -161,6 +164,8 @@ gst='git status'
 ### iTerm2 tab reset
 
 `oh_my_zsh/custom/iterm-reset.zsh` resets the iTerm2 tab to the Local Mac profile before every prompt. The server shells paint their own colour and badge and clear it only on a clean exit, so without this a dropped ssh session leaves the server colour behind. It does nothing outside iTerm2.
+
+For the full setup (server-side paint, clean-exit reset and this hook), see [docs/iterm-tab-colours.md](docs/iterm-tab-colours.md).
 
 ---
 
