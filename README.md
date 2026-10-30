@@ -37,6 +37,7 @@ automation, and terminal workflow optimization.
 │       ├── aliases.zsh
 │       ├── exports.zsh
 │       ├── functions.zsh
+│       ├── iterm-reset.zsh
 │       └── plugins/
 │           ├── zsh-autosuggestions/
 │           └── zsh-syntax-highlighting/
@@ -156,6 +157,10 @@ gst='git status'
 - Counts come from the in-memory shell history, so they include the current session and, with `SHARE_HISTORY` on, other open terminals; the line being typed is always counted, even though zsh stores it only after the hook has run. Only the most recent 3000 entries are scanned, which bounds the cost whatever the history size (roughly 10 to 15 ms per hint). A shell that runs more than about 3000 commands in a week therefore undercounts. Two identical commands in a row are stored once (`histignoredups`), so back-to-back repeats count once, and a command typed with a leading space is never stored (`histignorespace`), so later hints do not count it.
 - `aliasmiss off` / `aliasmiss on` switch it off and on, `aliasmiss status` shows the current state. The choice is remembered across shells by a marker file, `${XDG_STATE_HOME:-~/.local/state}/aliasmiss.off` (present means off); it lives outside the repo.
 - The hook keeps one private (mode 600) scratch file per shell in `$TMPDIR`. It holds history text only while a hint is being computed, is emptied right after, and is removed when the shell exits; a shell killed with `SIGKILL` or replaced with `exec` can leave the file behind (usually empty).
+
+### iTerm2 tab reset
+
+`oh_my_zsh/custom/iterm-reset.zsh` resets the iTerm2 tab to the Local Mac profile before every prompt. The server shells paint their own colour and badge and clear it only on a clean exit, so without this a dropped ssh session leaves the server colour behind. It does nothing outside iTerm2.
 
 ---
 
