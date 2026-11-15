@@ -3,6 +3,7 @@
 # The key is read from the macOS Keychain at launch, so nothing secret lives in this file.
 # One-time setup: security add-generic-password -a "$USER" -s openrouter -w
 # The model list lives in openrouter-models.conf next to this file; edit that, not this function.
+# claude-or uses its own config folder (~/.config/claude-or) so /model choices, history and settings saved here never reach plain `claude`.
 
 # @desc: Launch Claude Code through OpenRouter with a /model picker built from openrouter-models.conf
 # @usage: claude-or [claude args]
@@ -45,6 +46,11 @@ claude-or() {
 
     # The three slot variables point Default and background tasks at the starting model, so nothing asks Anthropic for a model it can't serve
     # `command` skips any alias or function named claude
+    # CLAUDE_CONFIG_DIR keeps everything claude-or saves (the /model "set as default" choice included) out of ~/.claude and ~/.claude.json
+    # Side effects: separate history, and no access to your global CLAUDE.md, plugins or MCP servers; override the folder with CLAUDE_OR_HOME
+    # CLAUDE_CODE_NO_FLICKER=1 keeps the fullscreen renderer plain `claude` uses; the fresh claude-or profile has no saved `tui` setting, so it would fall back to inline rendering
+    CLAUDE_CONFIG_DIR="${CLAUDE_OR_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/claude-or}" \
+    CLAUDE_CODE_NO_FLICKER=1 \
     ANTHROPIC_BASE_URL="https://openrouter.ai/api" \
     ANTHROPIC_AUTH_TOKEN="$key" \
     ANTHROPIC_API_KEY="" \
